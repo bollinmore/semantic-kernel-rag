@@ -9,16 +9,17 @@
 
 ### User Story 1 - Batch Document Ingestion and Processing (Priority: P1)
 
-As a system administrator, I want to provide a directory of internal documents or a single document file to the system so that they can be processed and indexed for retrieval.
+As a system administrator, I want to provide a directory of internal documents or a single document file to the system so that they can be processed and indexed for retrieval asynchronously.
 
 **Why this priority**: This is the core functionality for getting data into the RAG system, without which no queries can be answered.
 
-**Independent Test**: This can be tested by providing a sample directory of documents and verifying that the system processes them successfully and they become available for querying.
+**Independent Test**: This can be tested by providing a sample directory of documents, receiving a job ID, and later verifying that the system processed them successfully and they become available for querying.
 
 **Acceptance Scenarios**:
 
-1.  **Given** a folder containing multiple supported document files, **When** the administrator submits the folder path to the system, **Then** the system processes all documents without errors and reports success.
-2.  **Given** a path to a single supported document file, **When** the administrator submits the file path to the system, **Then** the system processes the document without errors and reports success.
+1.  **Given** a folder containing multiple supported document files, **When** the administrator submits the folder path to the system, **Then** the system immediately returns a job ID and begins processing the documents in the background.
+2.  **Given** a path to a single supported document file, **When** the administrator submits the file path to the system, **Then** the system immediately returns a job ID and begins processing the document in the background.
+3.  **Given** a path that has been previously submitted, **When** the administrator re-submits the path, **Then** the system triggers a re-scan to process new, updated, or deleted files. If no changes are found, the system reports this status.
 
 ---
 
@@ -42,9 +43,13 @@ As an MCP client, I want to send a query to the RAG MCP server and receive the m
 - What happens when the system encounters an unsupported file type during batch processing? (Resolved: System skips the file, logs a warning, and continues.)
 - What is the behavior when processing very large files (e.g., >1GB)? (Resolved: System segments large documents into smaller chunks.)
 - How does the MCP server respond to a malformed or invalid request from a client? (Resolved: Server returns a specific error message.)
--   What is the process for handling updated or deleted documents? (Resolved: Administrator can manually trigger re-scan.)
+- What is the process for handling updated or deleted documents? (Resolved: Administrator can manually trigger re-scan.)
+- How does the system handle password-protected or encrypted files? The system should skip them, log a warning, and continue processing other files.
+- How does the system handle an empty file or directory? The system should log a warning that the source was empty and report the operation as successful with zero items processed.
 
 ## Requirements *(mandatory)*
+
+*Note: The "MCP Server" will be implemented as a standard RESTful API.*
 
 ### Functional Requirements
 
@@ -55,7 +60,7 @@ As an MCP client, I want to send a query to the RAG MCP server and receive the m
 -   **FR-005**: System MUST process client queries and return relevant information extracted from the ingested documents.
 -   **FR-006**: The system MUST handle processing errors gracefully (e.g., unsupported file types, corrupted files, invalid paths) and log them appropriately without halting the entire batch.
 -   **FR-007**: System MUST allow an administrator to manually trigger a re-scan of a previously ingested directory to detect and process updated or deleted documents.
--   **FR-008**: The MCP server MUST return a clear error message when it receives a malformed or invalid request from a client.
+-   **FR-008**: The MCP server MUST return a clear error message in a structured JSON format (e.g., `{"error": "message"}`) when it receives a malformed or invalid request from a client.
 -   **FR-009**: The system MUST segment very large documents into smaller, manageable chunks for processing to optimize memory usage and processing efficiency.
 
 ### Non-Functional Requirements

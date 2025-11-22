@@ -17,10 +17,10 @@
 
 **Purpose**: Project initialization and basic structure for the C# Web API.
 
-- [ ] T001 Create .NET solution and project structure in `src/` and `tests/`.
-- [ ] T002 [P] Add NuGet packages to `src/RagMcpServer/RagMcpServer.csproj`: Microsoft.SemanticKernel, ASP.NET Core, Microsoft.SemanticKernel.Connectors.Chroma.
-- [ ] T003 [P] Add NuGet packages to `tests/RagMcpServer.UnitTests/` and `tests/RagMcpServer.IntegrationTests/`: xUnit, Moq, Microsoft.AspNetCore.Mvc.Testing.
-- [ ] T004 [P] Configure `src/RagMcpServer/appsettings.json` with placeholders for ChromaDB and Ollama endpoint URLs.
+- [x] T001 Create .NET solution and project structure in `src/` and `tests/`.
+- [x] T002 [P] Add NuGet packages to `src/RagMcpServer/RagMcpServer.csproj`: Microsoft.SemanticKernel, ASP.NET Core, Microsoft.SemanticKernel.Connectors.Chroma.
+- [x] T003 [P] Add NuGet packages to `tests/RagMcpServer.UnitTests/` and `tests/RagMcpServer.IntegrationTests/`: xUnit, Moq, Microsoft.AspNetCore.Mvc.Testing.
+- [x] T004 [P] Configure `src/RagMcpServer/appsettings.json` with placeholders for ChromaDB and Ollama endpoint URLs.
 
 ---
 
@@ -28,9 +28,9 @@
 
 **Purpose**: Core services that must be complete before any user story can be implemented.
 
-- [ ] T005 Implement a ChromaDB connection service to be used by other parts of the application in `src/RagMcpServer/Services/ChromaDbService.cs`.
-- [ ] T006 Implement a text embedding service that connects to the local Ollama `nomic-embed-text` model in `src/RagMcpServer/Services/OllamaEmbeddingService.cs`.
-- [ ] T007 Configure dependency injection for `ChromaDbService` and `OllamaEmbeddingService` in `src/RagMcpServer/Program.cs`.
+- [x] T005 Implement a ChromaDB connection service to be used by other parts of the application in `src/RagMcpServer/Services/ChromaDbService.cs`.
+- [x] T006 Implement a text embedding service that connects to the local Ollama `nomic-embed-text` model in `src/RagMcpServer/Services/OllamaEmbeddingService.cs`.
+- [x] T007 Configure dependency injection for `ChromaDbService` and `OllamaEmbeddingService` in `src/RagMcpServer/Program.cs`.
 
 **Checkpoint**: Foundation ready - user story implementation can now begin.
 
@@ -43,13 +43,13 @@
 
 ### Implementation for User Story 1
 
-- [ ] T008 [P] [US1] Create request and response DTOs for the ingestion endpoint in `src/RagMcpServer/Models/IngestionModels.cs`.
-- [ ] T009 [US1] Implement the core document processing logic (file reading, text extraction for .txt/.md, PDF parsing) in a new `src/RagMcpServer/Services/DocumentProcessingService.cs`.
-- [ ] T010 [US1] Implement text chunking logic within the `DocumentProcessingService.cs` to segment large documents.
-- [ ] T011 [US1] Implement the `POST /documents` API endpoint in `src/RagMcpServer/Controllers/DocumentsController.cs`, using the `DocumentProcessingService` to handle the request.
-- [ ] T012 [US1] Add logic to the `DocumentsController.cs` and `DocumentProcessingService.cs` to handle the manual re-scan of a directory.
-- [ ] T013 [P] [US1] Write unit tests for the `DocumentProcessingService` in `tests/RagMcpServer.UnitTests/`.
-- [ ] T014 [US1] Write integration tests for the `/documents` endpoint in `tests/RagMcpServer.IntegrationTests/`.
+- [x] T008 [P] [US1] Create request and response DTOs for the ingestion endpoint in `src/RagMcpServer/Models/IngestionModels.cs`.
+- [x] T009 [US1] Implement the core document processing logic (file reading, text extraction for .txt/.md, PDF parsing) in a new `src/RagMcpServer/Services/DocumentProcessingService.cs`.
+- [x] T010 [US1] Implement text chunking logic within the `DocumentProcessingService.cs` to segment large documents.
+- [x] T011 [US1] Implement the `POST /documents` API endpoint in `src/RagMcpServer/Controllers/DocumentsController.cs`, using the `DocumentProcessingService` to handle the request.
+- [x] T012 [US1] Add logic to the `DocumentsController.cs` and `DocumentProcessingService.cs` to handle the manual re-scan of a directory.
+- [x] T013 [P] [US1] Write unit tests for the `DocumentProcessingService` in `tests/RagMcpServer.UnitTests/`.
+- [x] T014 [US1] Write integration tests for the `/documents` endpoint in `tests/RagMcpServer.IntegrationTests/`.
 
 **Checkpoint**: User Story 1 should be fully functional and testable independently.
 
@@ -62,14 +62,14 @@
 
 ### Implementation for User Story 2
 
-- [ ] T015 [P] [US2] Create request and response DTOs for the query endpoint in `src/RagMcpServer/Models/QueryModels.cs`.
-- [ ] T016 [US2] Implement a `QueryService` to handle the RAG logic in `src/RagMcpServer/Services/QueryService.cs`. This service will:
+- [x] T015 [P] [US2] Create request and response DTOs for the query endpoint in `src/RagMcpServer/Models/QueryModels.cs`.
+- [x] T016 [US2] Implement a `QueryService` to handle the RAG logic in `src/RagMcpServer/Services/QueryService.cs`. This service will:
     - Generate an embedding for the incoming query using `OllamaEmbeddingService`.
     - Search ChromaDB for relevant `Knowledge Chunks` using `ChromaDbService`.
     - Use Semantic Kernel to generate a final answer based on the query and retrieved chunks.
-- [ ] T017 [US2] Implement the `POST /query` API endpoint in `src/RagMcpServer/Controllers/QueryController.cs`, using the `QueryService`.
-- [ ] T018 [P] [US2] Write unit tests for the `QueryService` in `tests/RagMcpServer.UnitTests/`.
-- [ ] T019 [US2] Write integration tests for the `/query` endpoint in `tests/RagMcpServer.IntegrationTests/`.
+- [x] T017 [US2] Implement the `POST /query` API endpoint in `src/RagMcpServer/Controllers/QueryController.cs`, using the `QueryService`.
+- [x] T018 [P] [US2] Write unit tests for the `QueryService` in `tests/RagMcpServer.UnitTests/`.
+- [x] T019 [US2] Write integration tests for the `/query` endpoint in `tests/RagMcpServer.IntegrationTests/`.
 
 **Checkpoint**: User Stories 1 AND 2 should now both work.
 
@@ -79,10 +79,10 @@
 
 **Purpose**: Improvements that affect multiple user stories.
 
-- [ ] T020 [P] Implement global error handling middleware in `src/RagMcpServer/Program.cs`.
-- [ ] T021 [P] Add structured logging (e.g., Serilog) throughout the application.
-- [ ] T022 [P] Create a `Dockerfile` for containerizing the application.
-- [ ] T023 Update the root `README.md` with detailed setup and usage instructions, referencing the `quickstart.md`.
+- [x] T020 [P] Implement global error handling middleware in `src/RagMcpServer/Program.cs`.
+- [x] T021 [P] Add structured logging (e.g., Serilog) throughout the application.
+- [x] T022 [P] Create a `Dockerfile` for containerizing the application.
+- [x] T023 Update the root `README.md` with detailed setup and usage instructions, referencing the `quickstart.md`.
 
 ---
 

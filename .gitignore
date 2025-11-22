@@ -1,44 +1,17 @@
-# Prerequisites
-*.d
+## C#/.NET
+bin/
+obj/
+*.user
+*.suo
+packages/
 
-# Compiled Object files
-*.slo
-*.lo
-*.o
-*.obj
+## Universal
+.DS_Store
+Thumbs.db
+*.tmp
+*.swp
+.vscode/
+.idea/
 
-# Precompiled Headers
-*.gch
-*.pch
 
-# Linker files
-*.ilk
-
-# Debugger Files
-*.pdb
-
-# Compiled Dynamic libraries
-*.so
-*.dylib
-*.dll
-
-# Fortran module files
-*.mod
-*.smod
-
-# Compiled Static libraries
-*.lai
-*.la
-*.a
-*.lib
-
-# Executables
-*.exe
-*.out
-*.app
-
-# debug information files
-*.dwo
-
-#
 .gemini/
