@@ -59,8 +59,8 @@ Send a `POST` request to the `/documents` endpoint to start the ingestion proces
 
 ```bash
 curl -X POST -H "Content-Type: application/json" \
-  -d '{"path": "/path/to/your/documents"}' \
-  http://localhost:5000/documents
+  -d "{\"path\": \"/path/to/your/documents\"}" \
+  http://localhost:5228/documents
 ```
 
 ### Query the System
@@ -68,6 +68,6 @@ Send a `POST` request to the `/query` endpoint to ask a question.
 
 ```bash
 curl -X POST -H "Content-Type: application/json" \
-  -d '{"query": "What is the main topic of the ingested documents?"}' \
-  http://localhost:5000/query
+  -d "{\"query\": \"What is the main topic of the ingested documents?\"}" \
+  http://localhost:5228/query
 ```

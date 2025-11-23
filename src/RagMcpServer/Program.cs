@@ -1,3 +1,4 @@
+using Microsoft.SemanticKernel.Embeddings;
 using RagMcpServer.Middleware;
 using RagMcpServer.Services;
 using Serilog;
@@ -10,8 +11,13 @@ builder.Host.UseSerilog((context, configuration) =>
 // Add services to the container.
 builder.Services.AddSingleton<ChromaDbService>();
 builder.Services.AddSingleton<OllamaEmbeddingService>();
+builder.Services.AddSingleton<ITextEmbeddingGenerationService>(sp => sp.GetRequiredService<OllamaEmbeddingService>());
 builder.Services.AddSingleton<DocumentProcessingService>();
 builder.Services.AddSingleton<QueryService>();
+
+// Add Semantic Kernel
+builder.Services.AddKernel();
+
 
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle

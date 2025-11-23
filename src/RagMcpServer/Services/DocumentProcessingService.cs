@@ -1,6 +1,10 @@
+#pragma warning disable SKEXP0050
 namespace RagMcpServer.Services;
 
+using System.Collections.Generic;
+using System.IO;
 using System.Text;
+using Microsoft.SemanticKernel.Text;
 
 public class DocumentProcessingService
 {
@@ -8,7 +12,7 @@ public class DocumentProcessingService
     {
         if (File.Exists(path))
         {
-            foreach (var chunk in GetFileChunks(path))
+            await foreach (var chunk in GetFileChunks(path))
             {
                 yield return chunk;
             }
@@ -17,7 +21,7 @@ public class DocumentProcessingService
         {
             foreach (var file in Directory.EnumerateFiles(path, "*.*", SearchOption.AllDirectories))
             {
-                foreach (var chunk in GetFileChunks(file))
+                await foreach (var chunk in GetFileChunks(file))
                 {
                     yield return chunk;
                 }
@@ -25,16 +29,20 @@ public class DocumentProcessingService
         }
     }
 
-    private IEnumerable<string> GetFileChunks(string filePath)
+    private async IAsyncEnumerable<string> GetFileChunks(string filePath)
     {
-        // Simple chunking for text files for now.
         if (Path.GetExtension(filePath).Equals(".txt", StringComparison.OrdinalIgnoreCase) ||
             Path.GetExtension(filePath).Equals(".md", StringComparison.OrdinalIgnoreCase))
         {
-            // A real implementation would be more sophisticated.
-            // This is just a placeholder.
-            var content = File.ReadAllText(filePath, Encoding.UTF8);
-            yield return content;
+            var content = await File.ReadAllTextAsync(filePath, Encoding.UTF8);
+            var lines = TextChunker.SplitPlainTextLines(content, 128);
+            var chunks = TextChunker.SplitPlainTextParagraphs(lines, 512);
+
+            foreach (var chunk in chunks)
+            {
+                yield return chunk;
+            }
         }
+        // PDF and other file types would be handled here
     }
 }
