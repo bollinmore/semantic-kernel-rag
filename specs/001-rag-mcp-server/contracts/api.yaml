@@ -1,0 +1,78 @@
+openapi: 3.0.0
+info:
+  title: RAG MCP Server API
+  version: 1.0.0
+  description: API for ingesting documents and querying the RAG system.
+paths:
+  /documents:
+    post:
+      summary: Ingest Documents
+      description: Submits a single file or a directory of files for processing and indexing.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                path:
+                  type: string
+                  description: The absolute path to the file or directory to ingest.
+              required:
+                - path
+      responses:
+        '202':
+          description: Accepted. The ingestion process has been started.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  jobId:
+                    type: string
+                    description: A unique ID for the ingestion job.
+                  status:
+                    type: string
+                    example: "Started"
+        '400':
+          description: Bad Request. The provided path is invalid or missing.
+  /query:
+    post:
+      summary: Query Documents
+      description: Submits a natural language query to the RAG system.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                query:
+                  type: string
+                  description: The natural language query.
+              required:
+                - query
+      responses:
+        '200':
+          description: OK. The query was successful.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  answer:
+                    type: string
+                    description: The generated answer from the RAG system.
+                  sourceDocuments:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        sourcePath:
+                          type: string
+                        content:
+                          type: string
+        '400':
+          description: Bad Request. The query is invalid or missing.
+        '404':
+          description: Not Found. No relevant information was found for the query.

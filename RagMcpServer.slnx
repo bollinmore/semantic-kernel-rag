@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/RagMcpServer/RagMcpServer.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/RagMcpServer.IntegrationTests/RagMcpServer.IntegrationTests.csproj" />
+    <Project Path="tests/RagMcpServer.UnitTests/RagMcpServer.UnitTests.csproj" />
+  </Folder>
+</Solution>
