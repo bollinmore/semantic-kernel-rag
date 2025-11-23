@@ -14,15 +14,12 @@ This guide provides the basic steps to set up the necessary dependencies and run
 
 ## Step 1: Set up Dependencies
 
-### Run ChromaDB
-The ChromaDB vector database will run in a Docker container.
 
-```bash
-docker run -p 8000:8000 chromadb/chroma
-```
 
 ### Run the Embedding Model
 This project uses the `nomic-embed-text` model, served by Ollama.
+
+**Note**: The vector database is now SQLite-based. A file named `rag.db` will be created in the application's working directory upon first ingestion if it doesn't already exist. No separate database server is required.
 
 1.  **Pull the model:**
     ```bash

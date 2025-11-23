@@ -8,13 +8,13 @@ using Microsoft.SemanticKernel.Embeddings;
 
 public class QueryService
 {
-    private readonly ChromaDbService _chromaDbService;
+    private readonly IVectorDbService _vectorDbService;
     private readonly ITextEmbeddingGenerationService _embeddingService;
     private readonly Kernel _kernel;
 
-    public QueryService(ChromaDbService chromaDbService, OllamaEmbeddingService embeddingService, Kernel kernel)
+    public QueryService(IVectorDbService vectorDbService, OllamaEmbeddingService embeddingService, Kernel kernel)
     {
-        _chromaDbService = chromaDbService;
+        _vectorDbService = vectorDbService;
         _embeddingService = embeddingService;
         _kernel = kernel;
     }
@@ -24,8 +24,8 @@ public class QueryService
         // 1. Get embedding for the query
         var queryEmbedding = (await _embeddingService.GenerateEmbeddingsAsync(new[] { query })).First();
 
-        // 2. Search ChromaDB for relevant documents
-        var searchResults = await _chromaDbService.SearchAsync(queryEmbedding, limit: 3);
+        // 2. Search Vector DB for relevant documents
+        var searchResults = await _vectorDbService.SearchAsync(queryEmbedding, limit: 3);
 
         if (!searchResults.Any())
         {
@@ -35,10 +35,10 @@ public class QueryService
         // 3. Use Semantic Kernel to generate an answer
         var context = string.Join("\n\n", searchResults);
 
-        var prompt = @$"
+        var prompt = $"""
             You are a helpful AI assistant answering questions based on the context provided.
             Answer the user's question using ONLY the information provided below.
-            If the information is not in the context, say ""I don't have enough information to answer.""
+            If the information is not in the context, say "I don't have enough information to answer."
 
             CONTEXT:
             ---
@@ -47,7 +47,7 @@ public class QueryService
 
             QUESTION: {query}
             ANSWER:
-        ";
+            """;
         
         var result = await _kernel.InvokePromptAsync(prompt);
 

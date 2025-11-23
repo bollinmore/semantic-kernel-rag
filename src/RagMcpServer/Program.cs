@@ -1,4 +1,5 @@
 using Microsoft.SemanticKernel.Embeddings;
+using Microsoft.SemanticKernel.ChatCompletion;
 using RagMcpServer.Middleware;
 using RagMcpServer.Services;
 using Serilog;
@@ -9,7 +10,8 @@ builder.Host.UseSerilog((context, configuration) =>
     configuration.ReadFrom.Configuration(context.Configuration));
 
 // Add services to the container.
-builder.Services.AddSingleton<ChromaDbService>();
+builder.Services.AddSingleton<IVectorDbService, SqliteDbService>();
+builder.Services.AddSingleton<IChatCompletionService>(sp => new OllamaChatCompletionService(sp.GetRequiredService<IConfiguration>()));
 builder.Services.AddSingleton<OllamaEmbeddingService>();
 builder.Services.AddSingleton<ITextEmbeddingGenerationService>(sp => sp.GetRequiredService<OllamaEmbeddingService>());
 builder.Services.AddSingleton<DocumentProcessingService>();

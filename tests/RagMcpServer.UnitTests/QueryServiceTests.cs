@@ -11,21 +11,21 @@ using System.Collections.Generic;
 
 public class QueryServiceTests
 {
-    private readonly Mock<ChromaDbService> _chromaDbServiceMock;
+    private readonly Mock<IVectorDbService> _vectorDbServiceMock;
     private readonly Mock<OllamaEmbeddingService> _embeddingServiceMock;
     private readonly Mock<Kernel> _kernelMock;
     private readonly QueryService _service;
 
     public QueryServiceTests()
     {
-        // Mock IConfiguration for ChromaDbService constructor
+        // Mock IConfiguration for services if needed
         var configMock = new Mock<Microsoft.Extensions.Configuration.IConfiguration>();
         
-        _chromaDbServiceMock = new Mock<ChromaDbService>(configMock.Object);
+        _vectorDbServiceMock = new Mock<IVectorDbService>();
         _embeddingServiceMock = new Mock<OllamaEmbeddingService>(configMock.Object, "nomic-embed-text");
         _kernelMock = new Mock<Kernel>();
         
-        _service = new QueryService(_chromaDbServiceMock.Object, _embeddingServiceMock.Object, _kernelMock.Object);
+        _service = new QueryService(_vectorDbServiceMock.Object, _embeddingServiceMock.Object, _kernelMock.Object);
     }
 
     [Fact]
@@ -38,7 +38,7 @@ public class QueryServiceTests
         _embeddingServiceMock.Setup(s => s.GenerateEmbeddingsAsync(It.IsAny<IList<string>>(), null, default))
             .ReturnsAsync(new List<ReadOnlyMemory<float>> { embedding });
         
-        _chromaDbServiceMock.Setup(s => s.SearchAsync(embedding, 3, default))
+        _vectorDbServiceMock.Setup(s => s.SearchAsync(embedding, 3, default))
             .ReturnsAsync(new List<string>());
 
         // Act
@@ -61,13 +61,15 @@ public class QueryServiceTests
         _embeddingServiceMock.Setup(s => s.GenerateEmbeddingsAsync(It.IsAny<IList<string>>(), null, default))
             .ReturnsAsync(new List<ReadOnlyMemory<float>> { embedding });
 
-        _chromaDbServiceMock.Setup(s => s.SearchAsync(embedding, 3, default))
+        _vectorDbServiceMock.Setup(s => s.SearchAsync(embedding, 3, default))
             .ReturnsAsync(searchResults);
         
-        var functionResultMock = new Mock<FunctionResult>(new Mock<FunctionMetadata>("test").Object, expectedAnswer);
+        var kernelFunctionMock = new Mock<KernelFunction>();
+        kernelFunctionMock.SetupGet(f => f.Name).Returns("test");
+        var functionResult = new FunctionResult(kernelFunctionMock.Object, expectedAnswer);
 
         _kernelMock.Setup(k => k.InvokePromptAsync(It.IsAny<string>(), It.IsAny<KernelArguments>(), default))
-            .ReturnsAsync(functionResultMock.Object);
+            .ReturnsAsync(functionResult);
 
         // Act
         var response = await _service.QueryAsync(query);

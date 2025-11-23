@@ -15,18 +15,18 @@ public class DocumentsController : ControllerBase
 {
     private readonly ILogger<DocumentsController> _logger;
     private readonly DocumentProcessingService _documentProcessingService;
-    private readonly ChromaDbService _chromaDbService;
+    private readonly IVectorDbService _vectorDbService;
     private readonly ITextEmbeddingGenerationService _embeddingService;
 
     public DocumentsController(
         ILogger<DocumentsController> logger,
         DocumentProcessingService documentProcessingService,
-        ChromaDbService chromaDbService,
+        IVectorDbService vectorDbService,
         OllamaEmbeddingService embeddingService)
     {
         _logger = logger;
         _documentProcessingService = documentProcessingService;
-        _chromaDbService = chromaDbService;
+        _vectorDbService = vectorDbService;
         _embeddingService = embeddingService;
     }
 
@@ -57,7 +57,7 @@ public class DocumentsController : ControllerBase
                 var chunksWithEmbeddings = chunks.Zip(embeddings, (text, embedding) => (text, embedding));
 
                 _logger.LogInformation("Job {JobId}: Saving chunks to vector store...", jobId);
-                await _chromaDbService.SaveChunksAsync(chunksWithEmbeddings);
+                await _vectorDbService.SaveChunksAsync(chunksWithEmbeddings);
             }
 
             _logger.LogInformation("Ingestion job {JobId} completed.", jobId);
