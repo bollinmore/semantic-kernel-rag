@@ -43,7 +43,7 @@ public class DocumentsController : ControllerBase
 
         _ = Task.Run(async () =>
         {
-            var chunks = new List<string>();
+            var chunks = new List<(string Content, string FilePath)>();
             await foreach (var chunk in _documentProcessingService.GetDocumentChunksAsync(request.Path))
             {
                 chunks.Add(chunk);
@@ -52,9 +52,12 @@ public class DocumentsController : ControllerBase
             if (chunks.Any())
             {
                 _logger.LogInformation("Job {JobId}: Generating embeddings for {ChunkCount} chunks...", jobId, chunks.Count);
-                var embeddings = await _embeddingService.GenerateEmbeddingsAsync(chunks);
+                // Extract just text for embedding generation
+                var texts = chunks.Select(c => c.Content).ToList();
+                var embeddings = await _embeddingService.GenerateEmbeddingsAsync(texts);
 
-                var chunksWithEmbeddings = chunks.Zip(embeddings, (text, embedding) => (text, embedding));
+                // Zip texts, embeddings, AND filePaths
+                var chunksWithEmbeddings = chunks.Zip(embeddings, (chunk, embedding) => (chunk.Content, embedding, chunk.FilePath));
 
                 _logger.LogInformation("Job {JobId}: Saving chunks to vector store...", jobId);
                 await _vectorDbService.SaveChunksAsync(chunksWithEmbeddings);

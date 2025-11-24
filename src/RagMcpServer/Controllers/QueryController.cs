@@ -23,7 +23,7 @@ public class QueryController : ControllerBase
             return BadRequest(new { error = "Query is required." });
         }
 
-        var response = await _queryService.QueryAsync(request.Query);
+        var response = await _queryService.QueryAsync(request.Query, request.IncludeSources);
 
         if (string.IsNullOrEmpty(response.Answer))
         {

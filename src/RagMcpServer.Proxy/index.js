@@ -140,6 +140,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       log(`Sending query to API: ${query}`);
       const response = await axios.post(`${API_BASE_URL}/Query`, {
         query: query, // Use camelCase for standard JSON binding
+        includeSources: true // Explicitly request sources for MCP context
       });
 
       log("Received API response", response.data);

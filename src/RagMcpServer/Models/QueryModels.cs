@@ -3,6 +3,7 @@ namespace RagMcpServer.Models;
 public class QueryRequest
 {
     public string Query { get; set; } = string.Empty;
+    public bool IncludeSources { get; set; } = false;
 }
 
 public class QueryResponse

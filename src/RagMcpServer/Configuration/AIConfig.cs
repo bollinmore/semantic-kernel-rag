@@ -8,6 +8,7 @@ public class AIConfig
 
     public AIServiceConfig TextGeneration { get; set; } = new();
     public AIServiceConfig TextEmbedding { get; set; } = new();
+    public DocumentProcessingConfig DocumentProcessing { get; set; } = new();
 }
 
 public class AIServiceConfig
@@ -16,4 +17,11 @@ public class AIServiceConfig
     public string ModelId { get; set; } = string.Empty;
     public string Endpoint { get; set; } = string.Empty;
     public string ApiKey { get; set; } = string.Empty;
+}
+
+public class DocumentProcessingConfig
+{
+    public int MaxTokensPerLine { get; set; } = 128;
+    public int MaxTokensPerParagraph { get; set; } = 512;
+    public int OverlapTokens { get; set; } = 50;
 }

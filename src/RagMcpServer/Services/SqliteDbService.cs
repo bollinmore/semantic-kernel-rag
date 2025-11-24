@@ -31,7 +31,7 @@ public class SqliteDbService : IVectorDbService
         return _memoryStore;
     }
 
-    public async Task SaveChunksAsync(IEnumerable<(string text, ReadOnlyMemory<float> embedding)> chunks, CancellationToken cancellationToken = default)
+    public async Task SaveChunksAsync(IEnumerable<(string text, ReadOnlyMemory<float> embedding, string filePath)> chunks, CancellationToken cancellationToken = default)
     {
         var store = await GetStoreAsync(cancellationToken);
         
@@ -40,40 +40,41 @@ public class SqliteDbService : IVectorDbService
             await store.CreateCollectionAsync(CollectionName, cancellationToken);
         }
 
-        foreach (var (text, embedding) in chunks)
+        foreach (var (text, embedding, filePath) in chunks)
         {
              var id = Guid.NewGuid().ToString();
+             // We store the filePath in the Description field.
              var memoryRecord = MemoryRecord.LocalRecord(
                  id: id,
                  text: text,
-                 description: null,
+                 description: filePath, 
                  embedding: embedding);
              
              await store.UpsertAsync(CollectionName, memoryRecord, cancellationToken);
         }
     }
 
-    public async Task<IEnumerable<string>> SearchAsync(ReadOnlyMemory<float> queryEmbedding, int limit = 3, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<SearchResultItem>> SearchAsync(ReadOnlyMemory<float> queryEmbedding, int limit = 3, CancellationToken cancellationToken = default)
     {
         var store = await GetStoreAsync(cancellationToken);
         
         if (!await store.DoesCollectionExistAsync(CollectionName, cancellationToken))
         {
-            return Enumerable.Empty<string>();
+            return Enumerable.Empty<SearchResultItem>();
         }
 
         var results = store.GetNearestMatchesAsync(
             CollectionName,
             queryEmbedding,
             limit: limit,
-            minRelevanceScore: 0.25,
+            minRelevanceScore: 0.5,
             cancellationToken: cancellationToken);
 
-        var resultStrings = new List<string>();
+        var items = new List<SearchResultItem>();
         await foreach (var (record, score) in results)
         {
-            resultStrings.Add(record.Metadata.Text);
+            items.Add(new SearchResultItem(record.Metadata.Text, record.Metadata.Description, score));
         }
-        return resultStrings;
+        return items;
     }
 }

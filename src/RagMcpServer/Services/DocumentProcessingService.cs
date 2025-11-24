@@ -4,11 +4,20 @@ namespace RagMcpServer.Services;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using Microsoft.Extensions.Options;
 using Microsoft.SemanticKernel.Text;
+using RagMcpServer.Configuration;
 
 public class DocumentProcessingService
 {
-    public async IAsyncEnumerable<string> GetDocumentChunksAsync(string path)
+    private readonly DocumentProcessingConfig _config;
+
+    public DocumentProcessingService(IOptions<AIConfig> config)
+    {
+        _config = config.Value.DocumentProcessing;
+    }
+
+    public async IAsyncEnumerable<(string Content, string FilePath)> GetDocumentChunksAsync(string path)
     {
         if (File.Exists(path))
         {
@@ -29,18 +38,18 @@ public class DocumentProcessingService
         }
     }
 
-    private async IAsyncEnumerable<string> GetFileChunks(string filePath)
+    private async IAsyncEnumerable<(string Content, string FilePath)> GetFileChunks(string filePath)
     {
         if (Path.GetExtension(filePath).Equals(".txt", StringComparison.OrdinalIgnoreCase) ||
             Path.GetExtension(filePath).Equals(".md", StringComparison.OrdinalIgnoreCase))
         {
             var content = await File.ReadAllTextAsync(filePath, Encoding.UTF8);
-            var lines = TextChunker.SplitPlainTextLines(content, 128);
-            var chunks = TextChunker.SplitPlainTextParagraphs(lines, 512);
+            var lines = TextChunker.SplitPlainTextLines(content, _config.MaxTokensPerLine);
+            var chunks = TextChunker.SplitPlainTextParagraphs(lines, _config.MaxTokensPerParagraph, _config.OverlapTokens);
 
             foreach (var chunk in chunks)
             {
-                yield return chunk;
+                yield return (chunk, filePath);
             }
         }
         // PDF and other file types would be handled here
