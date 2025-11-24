@@ -2,19 +2,22 @@ namespace RagMcpServer.Services;
 
 using System.Text;
 using System.Text.Json;
+using Microsoft.Extensions.Options;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Embeddings;
+using RagMcpServer.Configuration;
 
 public class OllamaEmbeddingService : ITextEmbeddingGenerationService
 {
     private readonly HttpClient _client;
     private readonly string _modelName;
 
-    public OllamaEmbeddingService(IConfiguration configuration, string modelName = "nomic-embed-text")
+    public OllamaEmbeddingService(IOptions<AIConfig> config)
     {
-        var endpoint = configuration["Ollama:Endpoint"] ?? "http://localhost:11434";
+        var settings = config.Value.TextEmbedding;
+        var endpoint = !string.IsNullOrEmpty(settings.Endpoint) ? settings.Endpoint : "http://localhost:11434";
         _client = new HttpClient { BaseAddress = new Uri(endpoint) };
-        _modelName = modelName;
+        _modelName = !string.IsNullOrEmpty(settings.ModelId) ? settings.ModelId : "nomic-embed-text";
         Attributes = new Dictionary<string, object>() as IReadOnlyDictionary<string, object?>;
     }
 

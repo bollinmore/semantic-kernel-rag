@@ -12,6 +12,11 @@ This project implements a Retrieval-Augmented Generation (RAG) system using the 
 
 For detailed setup and usage instructions, please see the [Quickstart Guide](./specs/001-rag-mcp-server/quickstart.md).
 
+## Configuration
+
+You can configure the AI providers (LLM and Embeddings) in `appsettings.json` or via Environment Variables.
+See [AI Configuration Guide](./specs/002-configure-llm-models/quickstart.md) for details.
+
 ## Project Structure
 
 - `src/`: Contains the C# source code for the web API.

@@ -22,7 +22,7 @@ public class DocumentsController : ControllerBase
         ILogger<DocumentsController> logger,
         DocumentProcessingService documentProcessingService,
         IVectorDbService vectorDbService,
-        OllamaEmbeddingService embeddingService)
+        ITextEmbeddingGenerationService embeddingService)
     {
         _logger = logger;
         _documentProcessingService = documentProcessingService;

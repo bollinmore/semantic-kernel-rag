@@ -12,7 +12,7 @@ public class QueryService
     private readonly ITextEmbeddingGenerationService _embeddingService;
     private readonly Kernel _kernel;
 
-    public QueryService(IVectorDbService vectorDbService, OllamaEmbeddingService embeddingService, Kernel kernel)
+    public QueryService(IVectorDbService vectorDbService, ITextEmbeddingGenerationService embeddingService, Kernel kernel)
     {
         _vectorDbService = vectorDbService;
         _embeddingService = embeddingService;
