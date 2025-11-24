@@ -17,3 +17,5 @@ Thumbs.db
 .gemini/
 *.db
 src/RagMcpServer/logs/
+
+node_modules/
