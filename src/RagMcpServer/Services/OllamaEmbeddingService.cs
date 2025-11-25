@@ -30,16 +30,47 @@ public class OllamaEmbeddingService : ITextEmbeddingGenerationService
         {
             var requestBody = new { model = _modelName, prompt = text };
             var content = new StringContent(JsonSerializer.Serialize(requestBody), Encoding.UTF8, "application/json");
-            var response = await _client.PostAsync("/api/embeddings", content, cancellationToken);
-            var responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
-
-            if (!response.IsSuccessStatusCode)
+            
+            HttpResponseMessage? response = null;
+            int maxRetries = 5;
+            for (int i = 0; i < maxRetries; i++)
             {
-                throw new InvalidOperationException(
-                    $"Ollama embeddings API failed with status code {(int)response.StatusCode} ({response.StatusCode}). " +
-                    $"Body: {responseBody}");
+                try 
+                {
+                    // Re-create content for each retry
+                    content = new StringContent(JsonSerializer.Serialize(requestBody), Encoding.UTF8, "application/json");
+                    response = await _client.PostAsync("/api/embeddings", content, cancellationToken);
+                    if (response.IsSuccessStatusCode) break;
+                    
+                    if ((int)response.StatusCode >= 500)
+                    {
+                        var delay = 2000 * (i + 1); // Aggressive backoff: 2s, 4s, 6s...
+                        await Task.Delay(delay, cancellationToken); 
+                        continue;
+                    }
+                    else 
+                    {
+                        break;
+                    }
+                }
+                catch (HttpRequestException)
+                {
+                    if (i == maxRetries - 1) throw;
+                    await Task.Delay(2000 * (i + 1), cancellationToken);
+                }
             }
 
+            // Throttle slightly to prevent overwhelming the runner
+            await Task.Delay(100, cancellationToken);
+
+            if (response == null || !response.IsSuccessStatusCode)
+            {
+                var body = response != null ? await response.Content.ReadAsStringAsync(cancellationToken) : "No response";
+                throw new InvalidOperationException(
+                    $"Ollama embeddings API failed after {maxRetries} retries. Status: {response?.StatusCode}. Body: {body}");
+            }
+
+            var responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
             var embeddingResponse = JsonSerializer.Deserialize<OllamaEmbeddingResponse>(responseBody);
             if (embeddingResponse?.embedding != null)
             {
