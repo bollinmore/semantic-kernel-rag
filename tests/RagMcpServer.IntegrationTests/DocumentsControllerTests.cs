@@ -1,10 +1,10 @@
-namespace RagMcpServer.IntegrationTests;
-
-using System.Net.Http.Json;
-using System.Threading.Tasks;
+using System.Net.Http.Headers;
+using System.Text;
+using System.Text.Json;
 using Microsoft.AspNetCore.Mvc.Testing;
-using RagMcpServer.Models;
 using Xunit;
+
+namespace RagMcpServer.IntegrationTests;
 
 public class DocumentsControllerTests : IClassFixture<WebApplicationFactory<Program>>
 {
@@ -16,19 +16,23 @@ public class DocumentsControllerTests : IClassFixture<WebApplicationFactory<Prog
     }
 
     [Fact]
-    public async Task Post_Documents_ReturnsAccepted()
+    public async Task UploadDocuments_ReturnsOk_WhenFilesUploaded()
     {
         // Arrange
         var client = _factory.CreateClient();
-        var tempDir = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
-        Directory.CreateDirectory(tempDir);
-        await File.WriteAllTextAsync(Path.Combine(tempDir, "test.txt"), "some content");
+        using var content = new MultipartFormDataContent();
+        var fileContent = new StringContent("This is a test document content.", Encoding.UTF8, "text/plain");
+        content.Add(fileContent, "files", "test.txt");
 
         // Act
-        var response = await client.PostAsJsonAsync("/documents", new IngestionRequest { Path = tempDir });
+        var response = await client.PostAsync("/Documents/upload", content);
 
         // Assert
-        response.EnsureSuccessStatusCode(); // Status Code 2xx
-        Assert.Equal(System.Net.HttpStatusCode.Accepted, response.StatusCode);
+        response.EnsureSuccessStatusCode();
+        var responseString = await response.Content.ReadAsStringAsync();
+        using var doc = JsonDocument.Parse(responseString);
+        
+        Assert.True(doc.RootElement.TryGetProperty("processedFiles", out var processed));
+        Assert.Equal(1, processed.GetInt32());
     }
 }

@@ -38,6 +38,24 @@ public class DocumentProcessingService
         }
     }
 
+    public async IAsyncEnumerable<(string Content, string FilePath)> GetDocumentChunksFromStreamAsync(Stream stream, string fileName)
+    {
+        // Currently only supporting text based formats for simplicity in this method
+        if (Path.GetExtension(fileName).Equals(".txt", StringComparison.OrdinalIgnoreCase) ||
+            Path.GetExtension(fileName).Equals(".md", StringComparison.OrdinalIgnoreCase))
+        {
+            using var reader = new StreamReader(stream, Encoding.UTF8);
+            var content = await reader.ReadToEndAsync();
+            var lines = TextChunker.SplitPlainTextLines(content, _config.MaxTokensPerLine);
+            var chunks = TextChunker.SplitPlainTextParagraphs(lines, _config.MaxTokensPerParagraph, _config.OverlapTokens);
+
+            foreach (var chunk in chunks)
+            {
+                yield return (chunk, fileName);
+            }
+        }
+    }
+
     private async IAsyncEnumerable<(string Content, string FilePath)> GetFileChunks(string filePath)
     {
         if (Path.GetExtension(filePath).Equals(".txt", StringComparison.OrdinalIgnoreCase) ||

@@ -6,23 +6,33 @@ using System.Threading.Tasks;
 using Xunit;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Embeddings;
+using Microsoft.SemanticKernel.ChatCompletion;
 using System;
 using System.Collections.Generic;
+using System.Threading;
+using System.Linq;
+using Microsoft.Extensions.DependencyInjection;
 
 public class QueryServiceTests
 {
     private readonly Mock<IVectorDbService> _vectorDbServiceMock;
     private readonly Mock<ITextEmbeddingGenerationService> _embeddingServiceMock;
-    private readonly Mock<Kernel> _kernelMock;
+    private readonly Mock<IChatCompletionService> _chatCompletionServiceMock;
+    private readonly Kernel _kernel;
     private readonly QueryService _service;
 
     public QueryServiceTests()
     {
         _vectorDbServiceMock = new Mock<IVectorDbService>();
         _embeddingServiceMock = new Mock<ITextEmbeddingGenerationService>();
-        _kernelMock = new Mock<Kernel>();
+        _chatCompletionServiceMock = new Mock<IChatCompletionService>();
+
+        // Create a real Kernel with mocked services
+        var builder = Kernel.CreateBuilder();
+        builder.Services.AddSingleton(_chatCompletionServiceMock.Object);
+        _kernel = builder.Build();
         
-        _service = new QueryService(_vectorDbServiceMock.Object, _embeddingServiceMock.Object, _kernelMock.Object);
+        _service = new QueryService(_vectorDbServiceMock.Object, _embeddingServiceMock.Object, _kernel);
     }
 
     [Fact]
@@ -39,7 +49,7 @@ public class QueryServiceTests
             .ReturnsAsync(new List<ReadOnlyMemory<float>> { embedding });
         
         _vectorDbServiceMock.Setup(s => s.SearchAsync(embedding, 3, default))
-            .ReturnsAsync(new List<string>());
+            .ReturnsAsync(new List<SearchResultItem>());
 
         // Act
         var response = await _service.QueryAsync(query);
@@ -55,7 +65,10 @@ public class QueryServiceTests
         // Arrange
         var query = "What is the capital of France?";
         var embedding = new ReadOnlyMemory<float>(new float[] { 1, 2, 3 });
-        var searchResults = new List<string> { "Paris is the capital of France." };
+        var searchResults = new List<SearchResultItem> 
+        { 
+            new SearchResultItem("Paris is the capital of France.", "test.txt", 0.9) 
+        };
         var expectedAnswer = "The capital of France is Paris.";
 
         _embeddingServiceMock.Setup(s => s.GenerateEmbeddingsAsync(
@@ -67,24 +80,21 @@ public class QueryServiceTests
         _vectorDbServiceMock.Setup(s => s.SearchAsync(embedding, 3, default))
             .ReturnsAsync(searchResults);
         
-        var kernelFunctionMock = new Mock<KernelFunction>();
-        kernelFunctionMock.SetupGet(f => f.Name).Returns("test");
-        var functionResult = new FunctionResult(kernelFunctionMock.Object, expectedAnswer);
-
-        _kernelMock.Setup(k => k.InvokePromptAsync(
-            It.IsAny<string>(), 
-            It.IsAny<KernelArguments>(), 
-            It.IsAny<string?>(),
-            It.IsAny<IPromptTemplateFactory?>(),
+        // Mock the chat completion call that Kernel.InvokePromptAsync eventually makes
+        // We need to mock the actual interface method: GetChatMessageContentsAsync (plural)
+        _chatCompletionServiceMock.Setup(c => c.GetChatMessageContentsAsync(
+            It.IsAny<ChatHistory>(),
+            It.IsAny<PromptExecutionSettings>(),
+            It.IsAny<Kernel>(),
             It.IsAny<CancellationToken>()))
-            .ReturnsAsync(functionResult);
+            .ReturnsAsync(new List<ChatMessageContent> { new ChatMessageContent(AuthorRole.Assistant, expectedAnswer) });
 
         // Act
-        var response = await _service.QueryAsync(query);
+        var response = await _service.QueryAsync(query, includeSources: true); // Include sources to verify them
 
         // Assert
         Assert.Equal(expectedAnswer, response.Answer);
         Assert.Single(response.SourceDocuments);
-        Assert.Equal(searchResults.First(), response.SourceDocuments.First().Content);
+        Assert.Equal(searchResults.First().Text, response.SourceDocuments.First().Content);
     }
 }
