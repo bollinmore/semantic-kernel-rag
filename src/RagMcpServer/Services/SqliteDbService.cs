@@ -130,4 +130,39 @@ public class SqliteDbService : IVectorDbService
         }
         return items;
     }
+
+    public async Task<int> GetDocumentCountAsync(CancellationToken cancellationToken = default)
+    {
+        var store = await GetStoreAsync(cancellationToken);
+        
+        try 
+        {
+             var connStr = _connectionString;
+             if (!connStr.Contains("Data Source=", StringComparison.OrdinalIgnoreCase) && 
+                 !connStr.Contains("DataSource=", StringComparison.OrdinalIgnoreCase))
+             {
+                 connStr = $"Data Source={connStr}";
+             }
+
+             using var connection = new Microsoft.Data.Sqlite.SqliteConnection(connStr);
+             await connection.OpenAsync(cancellationToken);
+             
+             // The table name created by SK's SqliteMemoryStore is typically "SKMemoryTable"
+             // but we should verify if it depends on the collection name.
+             // Looking at SK source, it uses a fixed table 'SKMemoryTable' and filters by 'collection' column.
+             
+             var command = connection.CreateCommand();
+             command.CommandText = "SELECT COUNT(*) FROM SKMemoryTable WHERE collection = @collection";
+             command.Parameters.AddWithValue("@collection", CollectionName);
+             
+             var result = await command.ExecuteScalarAsync(cancellationToken);
+             return Convert.ToInt32(result);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to get document count for collection '{CollectionName}'.", CollectionName);
+            // If table doesn't exist yet, return 0
+            return 0;
+        }
+    }
 }

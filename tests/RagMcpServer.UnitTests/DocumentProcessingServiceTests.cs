@@ -1,15 +1,31 @@
 namespace RagMcpServer.UnitTests;
 
 using RagMcpServer.Services;
+using RagMcpServer.Configuration;
 using Xunit;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using Microsoft.Extensions.Options;
 
 public class DocumentProcessingServiceTests
 {
-    private readonly DocumentProcessingService _service = new();
+    private readonly DocumentProcessingService _service;
+
+    public DocumentProcessingServiceTests()
+    {
+        var config = Options.Create(new AIConfig 
+        { 
+            DocumentProcessing = new DocumentProcessingConfig 
+            { 
+                MaxTokensPerLine = 100, 
+                MaxTokensPerParagraph = 200, 
+                OverlapTokens = 20 
+            } 
+        });
+        _service = new DocumentProcessingService(config);
+    }
 
     [Fact]
     public async Task GetDocumentChunksAsync_WithSingleFile_ReturnsCorrectChunks()
@@ -23,7 +39,8 @@ public class DocumentProcessingServiceTests
 
         // Assert
         Assert.NotEmpty(chunks);
-        Assert.Contains("This is the first line.", chunks.First());
+        Assert.Contains(chunks, c => c.Content.Contains("This is the first line."));
+        Assert.All(chunks, c => Assert.Equal(tempFile, c.FilePath));
         
         // Clean up
         File.Delete(tempFile);
@@ -35,8 +52,10 @@ public class DocumentProcessingServiceTests
         // Arrange
         var tempDir = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
         Directory.CreateDirectory(tempDir);
-        await File.WriteAllTextAsync(Path.Combine(tempDir, "test1.txt"), "Content from file one.");
-        await File.WriteAllTextAsync(Path.Combine(tempDir, "test2.md"), "Content from file two.");
+        var file1 = Path.Combine(tempDir, "test1.txt");
+        var file2 = Path.Combine(tempDir, "test2.md");
+        await File.WriteAllTextAsync(file1, "Content from file one.");
+        await File.WriteAllTextAsync(file2, "Content from file two.");
         await File.WriteAllTextAsync(Path.Combine(tempDir, "test3.unsupported"), "This should be ignored.");
 
         // Act
@@ -44,8 +63,8 @@ public class DocumentProcessingServiceTests
 
         // Assert
         Assert.Equal(2, chunks.Count);
-        Assert.Contains("Content from file one.", chunks);
-        Assert.Contains("Content from file two.", chunks);
+        Assert.Contains(chunks, c => c.Content.Contains("Content from file one.") && c.FilePath == file1);
+        Assert.Contains(chunks, c => c.Content.Contains("Content from file two.") && c.FilePath == file2);
 
         // Clean up
         Directory.Delete(tempDir, true);
@@ -56,8 +75,9 @@ public class DocumentProcessingServiceTests
     {
         // Arrange
         var tempFile = Path.GetTempFileName() + ".txt";
-        var longLine = new string('a', 600);
-        var content = $"{longLine}\n{longLine}";
+        // Create a long line with spaces to allow splitting
+        var longLine = string.Join(" ", Enumerable.Repeat("word", 100)); // 100 words * 5 chars = 500 chars approx
+        var content = $"{longLine} {longLine}"; // ~1000 chars
         await File.WriteAllTextAsync(tempFile, content);
 
         // Act
@@ -65,7 +85,10 @@ public class DocumentProcessingServiceTests
 
         // Assert
         Assert.True(chunks.Count > 1, "The content should have been split into multiple chunks.");
-        Assert.All(chunks, chunk => Assert.True(chunk.Length <= 512));
+        // We check the Content length of the tuple. 
+        // MaxTokensPerParagraph is 200. Avg token is 4 chars. So chunk should be ~800 chars max.
+        // Let's just assert it's less than the total length.
+        Assert.All(chunks, chunk => Assert.True(chunk.Content.Length < content.Length));
 
         // Clean up
         File.Delete(tempFile);

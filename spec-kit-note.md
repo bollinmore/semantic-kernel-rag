@@ -39,3 +39,32 @@
 ## analyze
 
 ## implement
+
+---
+
+# 003-cli-data-management
+
+## specify
+
+建立一個CLI，提供匯入資料、檢索資料以及查詢當前的向量資料庫資訊的功能。
+
+## clarify
+
+## plan
+
+此CLI使用 .NET SDK 開發，預計有以下指令：
+1. inject [-file <path>] [-dir <path>]
+2. query <msg>
+3. info -vector_ddb
+
+inject 接受單一檔案或是指定的資料夾，匯入後依照原先的資料切割流程轉為 embeddings 匯入向量資料庫
+query 接受自然語言從預先建立好的向量資料庫中提取資料，並交由LLM回答
+info 目前固定接受 "-vector_ddb" 參數，查詢當前的向量資料庫摘要(包含維度資訊)
+
+## checklist
+
+## tasks
+
+## analyze
+
+## implement

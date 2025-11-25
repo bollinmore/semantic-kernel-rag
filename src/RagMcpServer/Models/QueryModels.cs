@@ -1,5 +1,7 @@
 namespace RagMcpServer.Models;
 
+using System.Collections.Generic;
+
 public class QueryRequest
 {
     public string Query { get; set; } = string.Empty;
@@ -14,6 +16,6 @@ public class QueryResponse
 
 public class SourceDocument
 {
-    public string SourcePath { get; set; } = string.Empty;
     public string Content { get; set; } = string.Empty;
+    public string SourcePath { get; set; } = string.Empty;
 }
