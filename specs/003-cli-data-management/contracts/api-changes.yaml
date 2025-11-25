@@ -1,0 +1,54 @@
+openapi: 3.0.0
+info:
+  title: RagMcpServer API
+  version: 1.0.0
+paths:
+  /Documents/upload:
+    post:
+      summary: Upload and ingest files
+      operationId: uploadDocuments
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                files:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+      responses:
+        '200':
+          description: Successful upload
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  processedFiles:
+                    type: integer
+                  failedFiles:
+                    type: integer
+                  message:
+                    type: string
+
+  /Info:
+    get:
+      summary: Get server and vector DB status
+      operationId: getInfo
+      responses:
+        '200':
+          description: Server status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  vectorDb:
+                    type: object
+                    properties:
+                      collectionName:
+                        type: string
+                      documentCount:
+                        type: integer
