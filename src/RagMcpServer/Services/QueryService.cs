@@ -12,14 +12,14 @@ public class QueryService
     private readonly ITextEmbeddingGenerationService _embeddingService;
     private readonly Kernel _kernel;
 
-    public QueryService(IVectorDbService vectorDbService, OllamaEmbeddingService embeddingService, Kernel kernel)
+    public QueryService(IVectorDbService vectorDbService, ITextEmbeddingGenerationService embeddingService, Kernel kernel)
     {
         _vectorDbService = vectorDbService;
         _embeddingService = embeddingService;
         _kernel = kernel;
     }
 
-    public async Task<QueryResponse> QueryAsync(string query)
+    public async Task<QueryResponse> QueryAsync(string query, bool includeSources = false)
     {
         // 1. Get embedding for the query
         var queryEmbedding = (await _embeddingService.GenerateEmbeddingsAsync(new[] { query })).First();
@@ -33,7 +33,7 @@ public class QueryService
         }
 
         // 3. Use Semantic Kernel to generate an answer
-        var context = string.Join("\n\n", searchResults);
+        var context = string.Join("\n\n", searchResults.Select(r => r.Text));
 
         var prompt = $"""
             You are a helpful AI assistant answering questions based on the context provided.
@@ -54,7 +54,9 @@ public class QueryService
         return new QueryResponse
         {
             Answer = result.ToString(),
-            SourceDocuments = searchResults.Select(r => new SourceDocument { Content = r }).ToList()
+            SourceDocuments = includeSources 
+                ? searchResults.Select(r => new SourceDocument { Content = r.Text, SourcePath = r.FilePath }).ToList()
+                : new List<SourceDocument>()
         };
     }
 }

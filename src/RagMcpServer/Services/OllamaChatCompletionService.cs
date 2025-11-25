@@ -2,6 +2,8 @@ namespace RagMcpServer.Services;
 
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
+using Microsoft.Extensions.Options;
+using RagMcpServer.Configuration;
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Text;
@@ -14,11 +16,12 @@ public class OllamaChatCompletionService : IChatCompletionService
     private readonly HttpClient _client;
     private readonly string _modelName;
 
-    public OllamaChatCompletionService(IConfiguration configuration, string modelName = "llama3.1")
+    public OllamaChatCompletionService(IOptions<AIConfig> config)
     {
-        var endpoint = configuration["Ollama:Endpoint"] ?? "http://localhost:11434";
+        var settings = config.Value.TextGeneration;
+        var endpoint = !string.IsNullOrEmpty(settings.Endpoint) ? settings.Endpoint : "http://localhost:11434";
         _client = new HttpClient { BaseAddress = new Uri(endpoint) };
-        _modelName = modelName;
+        _modelName = !string.IsNullOrEmpty(settings.ModelId) ? settings.ModelId : "llama3.1";
         Attributes = new Dictionary<string, object?>() as IReadOnlyDictionary<string, object?>;
     }
 

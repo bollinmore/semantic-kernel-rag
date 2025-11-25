@@ -2,6 +2,8 @@ using Microsoft.SemanticKernel.Embeddings;
 using Microsoft.SemanticKernel.ChatCompletion;
 using RagMcpServer.Middleware;
 using RagMcpServer.Services;
+using RagMcpServer.Configuration;
+using RagMcpServer.Extensions;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -9,11 +11,12 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Host.UseSerilog((context, configuration) => 
     configuration.ReadFrom.Configuration(context.Configuration));
 
+// Add Configuration
+builder.Services.Configure<AIConfig>(builder.Configuration.GetSection(AIConfig.SectionName));
+
 // Add services to the container.
 builder.Services.AddSingleton<IVectorDbService, SqliteDbService>();
-builder.Services.AddSingleton<IChatCompletionService>(sp => new OllamaChatCompletionService(sp.GetRequiredService<IConfiguration>()));
-builder.Services.AddSingleton<OllamaEmbeddingService>();
-builder.Services.AddSingleton<ITextEmbeddingGenerationService>(sp => sp.GetRequiredService<OllamaEmbeddingService>());
+builder.Services.AddAIServices();
 builder.Services.AddSingleton<DocumentProcessingService>();
 builder.Services.AddSingleton<QueryService>();
 
@@ -46,6 +49,8 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
+
+public partial class Program { }
 
 record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
 {
