@@ -1,7 +1,7 @@
 using Spectre.Console.Cli;
 using System.Threading.Tasks;
 
-namespace RagMcpServer.CLI
+namespace RagMcpClient
 {
     class Program
     {
@@ -11,14 +11,14 @@ namespace RagMcpServer.CLI
             app.Configure(config =>
             {
                 config.SetApplicationName("rag-cli");
-                config.AddCommand<RagMcpServer.CLI.Commands.InjectCommand>("inject")
+                config.AddCommand<RagMcpClient.Commands.InjectCommand>("inject")
                     .WithDescription("Import documents from a local directory");
-                config.AddCommand<RagMcpServer.CLI.Commands.QueryCommand>("query")
+                config.AddCommand<RagMcpClient.Commands.QueryCommand>("query")
                     .WithDescription("Ask a question to the system");
-                config.AddCommand<RagMcpServer.CLI.Commands.InfoCommand>("info")
-                    .WithDescription("Show system information");
-                config.AddCommand<RagMcpServer.CLI.Commands.HelpCommand>("help")
+                config.AddCommand<RagMcpClient.Commands.HelpCommand>("help")
                     .WithDescription("Show help information");
+                config.AddCommand<RagMcpClient.Commands.TestConnectionCommand>("test-connection")
+                    .WithDescription("Verify connection to MCP Server");
             });
             return await app.RunAsync(args);
         }

@@ -3,7 +3,7 @@ using Spectre.Console.Cli;
 using System.Threading.Tasks;
 using System.Threading;
 
-namespace RagMcpServer.CLI.Commands;
+namespace RagMcpClient.Commands;
 
 public class HelpCommand : AsyncCommand<HelpCommand.Settings>
 {
@@ -13,7 +13,7 @@ public class HelpCommand : AsyncCommand<HelpCommand.Settings>
 
     public override Task<int> ExecuteAsync(CommandContext context, Settings settings, CancellationToken cancellationToken)
     {
-        AnsiConsole.MarkupLine("[bold]RagMcpServer CLI[/]");
+        AnsiConsole.MarkupLine("[bold]RagMcpClient[/]");
         AnsiConsole.WriteLine();
         
         AnsiConsole.MarkupLine("[bold]Usage:[/] [silver]dotnet run --[/] [bold]<COMMAND>[/] [silver][[OPTIONS]][/]");

@@ -1,6 +1,6 @@
 <Solution>
   <Folder Name="/src/">
-    <Project Path="src/RagMcpServer/RagMcpServer.csproj" />
+<Project Path="src/RagMcpClient/RagMcpClient.csproj" Type="Classic C#" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/RagMcpServer.IntegrationTests/RagMcpServer.IntegrationTests.csproj" />
