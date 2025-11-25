@@ -9,41 +9,36 @@ public class ApiClient
 
     public ApiClient(string baseUrl)
     {
-        _httpClient = new HttpClient { BaseAddress = new Uri(baseUrl) };
+        _httpClient = new HttpClient 
+        { 
+            BaseAddress = new Uri(baseUrl),
+            Timeout = TimeSpan.FromMinutes(30)
+        };
     }
 
-    public async Task<string> UploadDocumentsAsync(string directoryPath)
+    public async Task<UploadResponse> UploadFilesAsync(IEnumerable<string> filePaths)
     {
-        if (!Directory.Exists(directoryPath))
-        {
-            throw new DirectoryNotFoundException($"Directory not found: {directoryPath}");
-        }
-
         using var content = new MultipartFormDataContent();
         int fileCount = 0;
 
-        foreach (var filePath in Directory.EnumerateFiles(directoryPath, "*.*", SearchOption.AllDirectories))
+        foreach (var filePath in filePaths)
         {
-            var extension = Path.GetExtension(filePath).ToLower();
-            if (extension == ".txt" || extension == ".md")
-            {
-                var fileStream = File.OpenRead(filePath);
-                var streamContent = new StreamContent(fileStream);
-                streamContent.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
-                content.Add(streamContent, "files", Path.GetFileName(filePath));
-                fileCount++;
-            }
+            var fileStream = File.OpenRead(filePath);
+            var streamContent = new StreamContent(fileStream);
+            streamContent.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
+            content.Add(streamContent, "files", Path.GetFileName(filePath));
+            fileCount++;
         }
 
         if (fileCount == 0)
         {
-            return "No supported files found to upload.";
+            return new UploadResponse { Message = "No files to upload." };
         }
 
         var response = await _httpClient.PostAsync("/Documents/upload", content);
         response.EnsureSuccessStatusCode();
 
-        return await response.Content.ReadAsStringAsync();
+        return await response.Content.ReadFromJsonAsync<UploadResponse>() ?? new UploadResponse();
     }
 
     public async Task<QueryResponse?> QueryAsync(string queryText)
@@ -64,6 +59,13 @@ public class ApiClient
     {
         return await _httpClient.GetFromJsonAsync<InfoResponse>("/Info");
     }
+}
+
+public class UploadResponse
+{
+    public int ProcessedFiles { get; set; }
+    public int FailedFiles { get; set; }
+    public string Message { get; set; } = string.Empty;
 }
 
 public class QueryResponse
