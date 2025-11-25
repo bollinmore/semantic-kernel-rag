@@ -47,7 +47,11 @@ public class InfoCommand : AsyncCommand<InfoCommand.Settings>
 
                 table.AddRow("Collection Name", info.VectorDb.CollectionName);
                 table.AddRow("Document Count", info.VectorDb.DocumentCount.ToString());
-                table.AddRow("Provider", info.VectorDb.Provider);
+                table.AddRow("Vector DB Type", info.VectorDb.VectorDbType);
+                table.AddRow("Algorithm", info.VectorDb.Algorithm);
+                table.AddRow("Embedding Model", info.VectorDb.EmbeddingModelName);
+                table.AddRow("Embedding Provider", info.VectorDb.EmbeddingProvider);
+                table.AddRow("Embedding Dimensions", info.VectorDb.EmbeddingDimensions.ToString());
 
                 AnsiConsole.Write(table);
             }
@@ -55,7 +59,7 @@ public class InfoCommand : AsyncCommand<InfoCommand.Settings>
             {
                 // Default info view if flags not specified (can extend later)
                  AnsiConsole.MarkupLine($"Connected to server at {settings.ServerUrl}");
-                 AnsiConsole.MarkupLine($"Vector DB Provider: {info.VectorDb.Provider}");
+                 AnsiConsole.MarkupLine($"Vector DB Provider: {info.VectorDb.VectorDbType}"); // Updated
             }
 
             return 0;

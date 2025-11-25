@@ -90,5 +90,9 @@ public class VectorDbInfo
 {
     public string CollectionName { get; set; } = string.Empty;
     public int DocumentCount { get; set; }
-    public string Provider { get; set; } = string.Empty;
+    public string VectorDbType { get; set; } = string.Empty; // e.g., Sqlite
+    public string Algorithm { get; set; } = string.Empty; // e.g., Cosine Similarity
+    public string EmbeddingModelName { get; set; } = string.Empty;
+    public string EmbeddingProvider { get; set; } = string.Empty;
+    public int EmbeddingDimensions { get; set; }
 }
