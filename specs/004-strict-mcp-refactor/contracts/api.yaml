@@ -1,0 +1,93 @@
+openapi: 3.0.0
+info:
+  title: RagMcpServer Tool Definitions (MCP)
+  version: 1.0.0
+  description: >
+    These schemas define the 'inputSchema' for the MCP tools exposed by the Server.
+    They are NOT REST endpoints, but the structure of the `arguments` object in a `tools/call` JSON-RPC request.
+
+components:
+  schemas:
+    # -------------------------------------------------------------------------
+    # Tool: Inject
+    # Description: Stores text memory into the vector database.
+    # -------------------------------------------------------------------------
+    InjectArguments:
+      type: object
+      required:
+        - text
+        - collection
+      properties:
+        text:
+          type: string
+          description: The content to be stored and embedded.
+        collection:
+          type: string
+          description: A namespace or category for the memory (e.g., "user-docs").
+        metadata:
+          type: object
+          description: Key-value pairs of additional info (filename, author, etc.).
+          additionalProperties:
+            type: string
+
+    # -------------------------------------------------------------------------
+    # Tool: Query
+    # Description: Searches the vector database for relevant text chunks.
+    # -------------------------------------------------------------------------
+    QueryArguments:
+      type: object
+      required:
+        - query
+        - collection
+      properties:
+        query:
+          type: string
+          description: The question or text to find similar memories for.
+        collection:
+          type: string
+          description: The namespace to search within.
+        limit:
+          type: integer
+          description: Maximum number of results to return.
+          default: 3
+          minimum: 1
+          maximum: 10
+        min_relevance:
+          type: number
+          description: Minimum similarity score (0.0 to 1.0).
+          default: 0.7
+
+    # -------------------------------------------------------------------------
+    # Tool Output Structures (Result content)
+    # -------------------------------------------------------------------------
+    InjectResult:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            type: object
+            properties:
+              type:
+                type: string
+                enum: [text]
+              text:
+                type: string
+                description: Confirmation message.
+
+    QueryResult:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            type: object
+            properties:
+              type:
+                type: string
+                enum: [text]
+              text:
+                type: string
+                description: >
+                  JSON stringified list of results:
+                  [ { "text": "...", "score": 0.85, "metadata": {...} } ]

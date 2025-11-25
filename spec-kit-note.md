@@ -68,3 +68,30 @@ info 目前固定接受 "-vector_ddb" 參數，查詢當前的向量資料庫摘
 ## analyze
 
 ## implement
+
+---
+
+# 004-
+
+## specify
+
+重構本專案，使 Server & Client 遵循嚴格的 MCP 規範。
+Server 端只提供 Inject, Query 工具、處理向量訊息。
+Client 端要負責啟動 Server, 處理 LLM 連線，把訊息回應給使用者。
+
+## clarify
+
+## plan
+
+修改 RagMcpServer 使其符合 MCP server 規範，接受來自 LLM 呼叫調用工具，只接受 MCP JSON-RPC 通訊格式，而不是使用 Resetful API 呼叫。
+RagMcpServer 並不負責處理 LLM 連線功能，輸入與輸出一律採用 JSON-RPC 格式。
+
+重命名 RagMcpServer.CLI 為 RagMcpClient, 負責啟動 RagMcpServer, 保留目前所有指令。另外 RagMcpClient 在啟動 MCP server 後，必須進行初始化設定，從 MCP server 中取得所有支援的工具並記下來。RagMcpClient 要負責接收使用者的訊息，傳遞給LLM來決定是否調用 MCP tool 後然後把 LLM 整理過後的回應印到終端機上給使用者看。
+
+## checklist
+
+## tasks
+
+## analyze
+
+## implement
