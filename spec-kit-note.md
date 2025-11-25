@@ -20,7 +20,7 @@
 
 ---
 
-# 002-
+# 002-configure-llm-models
 
 ## specify
 
