@@ -2,24 +2,26 @@
 
 The `RagMcpServer.CLI` is a command-line interface tool for managing documents and interacting with the RAG (Retrieval-Augmented Generation) server.
 
+The CLI acts as an **MCP Client**. It automatically spawns the `RagMcpServer` process locally and communicates with it via standard input/output (stdio). You do **not** need to start the server separately.
+
 ## Prerequisites
 
 - .NET 8.0 SDK or later
-- A running instance of `RagMcpServer`
+- Ollama running (for the Server to access Embeddings/LLMs)
 
 ## Installation / Building
 
 Navigate to the CLI project directory:
 
 ```bash
-cd src/RagMcpServer.CLI
+cd src/RagMcpClient
 dotnet build
 ```
 
 ## Global Options
 
 - `-h, --help`: Show help and usage information.
-- `-s, --server <URL>`: Specify the API server URL (Default: `http://localhost:5228`).
+- `-v, --version`: Show version information.
 
 ## Commands
 
@@ -30,18 +32,21 @@ Imports documents from a local directory into the vector database.
 **Usage:**
 
 ```bash
-dotnet run -- inject -p <PATH> [OPTIONS]
+dotnet run -- inject <PATH> [OPTIONS]
 ```
+
+**Arguments:**
+
+- `<PATH>`: (Required) Path to the directory containing documents (`.txt`, `.md`) to import.
 
 **Options:**
 
-- `-p, --path <PATH>`: (Required) Path to the directory containing documents (`.txt`, `.md`) to import.
-- `-s, --server <URL>`: URL of the API server.
+- `-s, --server-path <PATH>`: Optional path to the `RagMcpServer` executable. If omitted, the CLI attempts to auto-detect it in standard build output directories.
 
 **Example:**
 
 ```bash
-dotnet run -- inject -p "C:/Documents/KnowledgeBase"
+dotnet run -- inject "C:/Documents/KnowledgeBase"
 ```
 
 ### `query`
@@ -60,7 +65,7 @@ dotnet run -- query <QUERY> [OPTIONS]
 
 **Options:**
 
-- `-s, --server <URL>`: URL of the API server.
+- `-s, --server-path <PATH>`: Optional path to the `RagMcpServer` executable.
 
 **Example:**
 
@@ -70,23 +75,16 @@ dotnet run -- query "How do I configure the server?"
 
 ### `info`
 
-Displays status information about the server and vector database.
+Displays status information about the server and vector database. (Note: Ensure this command is implemented in the latest version).
+
+### `test-connection`
+
+Verifies that the CLI can successfully spawn and handshake with the MCP Server.
 
 **Usage:**
 
 ```bash
-dotnet run -- info [OPTIONS]
-```
-
-**Options:**
-
-- `-v, --vector_db`: Display detailed vector database statistics (Collection Name, Document Count, Provider).
-- `-s, --server <URL>`: URL of the API server.
-
-**Example:**
-
-```bash
-dotnet run -- info -v
+dotnet run -- test-connection
 ```
 
 ### `help`
@@ -97,7 +95,7 @@ To see available commands:
 dotnet run -- help
 ```
 
-To see help for a specific command (native flags):
+To see help for a specific command:
 
 ```bash
 dotnet run -- [command] --help

@@ -1,59 +1,82 @@
 # How to Use RagMcpServer with Cline
 
-This project exposes a RAG (Retrieval-Augmented Generation) system as an **MCP (Model Context Protocol) Server** that Cline can use to query your internal documents.
+This project provides a RAG (Retrieval-Augmented Generation) system as a **Model Context Protocol (MCP) Server**. 
 
-Because the core logic is an ASP.NET Core Web API, we use a lightweight **Node.js Proxy** to bridge Cline (Stdio) and the running C# Server (HTTP).
+Since the server implements MCP over **stdio**, Cline can run the C# executable directly. No intermediate proxy is required.
 
 ## Prerequisites
 
-1.  **.NET 8.0 SDK** (for the backend)
-2.  **Node.js** (v18+ recommended)
+1.  **.NET 8.0 SDK** (to build and run the server)
+2.  **Ollama** (running locally for Embeddings/LLM support)
 
 ## Setup Steps
 
-### 1. Start the C# Backend
-The MCP server proxy requires the backend API to be running to process requests.
+### 1. Build the Server
+
+Ensure the server is built so that the executable exists.
 
 ```bash
 cd src/RagMcpServer
-dotnet run
+dotnet build -c Debug
 ```
-*Keep this terminal window open. The server will listen on `http://localhost:5228`.*
+
+Note the path to the project or the built executable.
+- Project Path: `.../src/RagMcpServer/RagMcpServer.csproj`
+- Executable Path: `.../src/RagMcpServer/bin/Debug/net8.0/RagMcpServer.dll` (or `.exe` on Windows)
 
 ### 2. Configure Cline
+
 Edit your Cline MCP Settings file (typically found at `%APPDATA%\Code\User\globalStorage\saoudrizwan.claude-dev\settings\cline_mcp_settings.json` on Windows or `~/.config/Code/...` on Mac/Linux).
 
-Add the following entry to the `mcpServers` object:
+Add an entry to the `mcpServers` object. You can run it using `dotnet run` (easiest for dev) or by executing the binary directly.
+
+#### Option A: Using `dotnet run` (Recommended for Development)
 
 ```json
 "rag-mcp-server": {
-  "command": "node",
+  "command": "dotnet",
   "args": [
-    "C:\\Users\\alvin.chen\\Documents\\Insyde\\Proj\\bollinmore\\semantic-kernel-rag\\src\\RagMcpServer.Proxy\\index.js"
+    "run",
+    "--project",
+    "/ABSOLUTE/PATH/TO/src/RagMcpServer/RagMcpServer.csproj"
   ],
   "disabled": false,
   "autoApprove": []
 }
 ```
-**Note:** You must update the path in `args` to match the actual absolute path to the `src/RagMcpServer.Proxy/index.js` file on your machine.
 
-### 3. Install Proxy Dependencies (First Time Only)
-If you haven't already:
-```bash
-cd src/RagMcpServer.Proxy
-npm install
+#### Option B: Running the Binary Directly
+
+```json
+"rag-mcp-server": {
+  "command": "dotnet",
+  "args": [
+    "/ABSOLUTE/PATH/TO/src/RagMcpServer/bin/Debug/net8.0/RagMcpServer.dll"
+  ],
+  "disabled": false,
+  "autoApprove": []
+}
 ```
 
-## Usage
+*Replace `/ABSOLUTE/PATH/TO/...` with the actual absolute path on your machine.*
 
-Once configured, reload Cline (or restart VS Code). You should see the following tools available:
+### 3. Restart Cline
 
--   **`ingest_documents`**: Provide a file or folder path to index documents.
-    -   *Example:* "Please ingest the documents in C:\MyDocs"
--   **`query_documents`**: Ask questions about the ingested content.
-    -   *Example:* "What does the internal documentation say about project X?"
+Reload VS Code or restart Cline. You should see the `rag-mcp-server` connected in the MCP Servers tab.
+
+## Available Tools
+
+Once connected, the following tools will be available to Cline:
+
+-   **`Inject`**: Add documents to the knowledge base.
+    -   Arguments: `text` (string), `metadata` (object)
+-   **`Query`**: Search the knowledge base.
+    -   Arguments: `query` (string), `limit` (int, optional)
 
 ## Troubleshooting
 
--   **"Error: Could not connect..."**: Ensure the `dotnet run` process is still active and listening on port 5228.
--   **No tools showing up**: Check Cline's "MCP Servers" tab for connection errors or logs.
+-   **"Error: Could not connect..."**: 
+    -   Check if the path in `args` is correct.
+    -   Try running the command manually in your terminal to see if it starts without errors.
+    -   Ensure `Ollama` is running, as the server might fail to start if dependencies are missing (check server logs).
+-   **Logs**: You can check the "MCP Servers" output in VS Code to see the stderr logs from the C# server.
