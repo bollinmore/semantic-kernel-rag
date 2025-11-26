@@ -26,6 +26,44 @@ public class SqliteDbService : IVectorDbService
         _logger.LogInformation("SqliteDbService initialized with connection string: {ConnectionString}", _connectionString); // Log connection string
     }
 
+    public bool Exists
+    {
+        get
+        {
+            try 
+            {
+                var path = _connectionString;
+                // Simple parsing for "Data Source=" or "DataSource="
+                var builder = new System.Data.Common.DbConnectionStringBuilder();
+                builder.ConnectionString = _connectionString;
+                
+                object? file = null;
+                if (builder.TryGetValue("Data Source", out var f1))
+                {
+                    file = f1;
+                }
+                else if (builder.TryGetValue("DataSource", out var f2))
+                {
+                    file = f2;
+                }
+                
+                if (file != null)
+                {
+                    path = (string)file;
+                }
+                
+                // If path is relative, it depends on working dir, but let's check it.
+                // Assuming local file.
+                return System.IO.File.Exists(path);
+            }
+            catch
+            {
+                // Fallback: check if the string itself is a file that exists
+                return System.IO.File.Exists(_connectionString);
+            }
+        }
+    }
+
     private async Task<IMemoryStore> GetStoreAsync(CancellationToken cancellationToken)
     {
         if (_memoryStore == null)

@@ -18,12 +18,14 @@ public class McpServer
     // Services (Phase 3 & 4)
     private readonly DocumentProcessingService _documentService;
     private readonly QueryService _queryService;
+    private readonly IVectorDbService _vectorDbService;
 
-    public McpServer(ILogger<McpServer> logger, DocumentProcessingService docService, QueryService queryService)
+    public McpServer(ILogger<McpServer> logger, DocumentProcessingService docService, QueryService queryService, IVectorDbService vectorDbService)
     {
         _logger = logger;
         _documentService = docService;
         _queryService = queryService;
+        _vectorDbService = vectorDbService;
         RegisterTools();
     }
 
@@ -116,6 +118,13 @@ public class McpServer
             switch (request.Method)
             {
                 case "initialize":
+                    if (!_vectorDbService.Exists)
+                    {
+                        var msg = "Vector database file not found. Please ensure the 'ConnectionStrings:Sqlite' path is correct and the file exists.";
+                        _logger.LogError(msg);
+                        return new McpResponse { Id = request.Id, Error = new McpError { Code = -32002, Message = msg } };
+                    }
+
                     return new McpResponse 
                     { 
                         Id = request.Id, 

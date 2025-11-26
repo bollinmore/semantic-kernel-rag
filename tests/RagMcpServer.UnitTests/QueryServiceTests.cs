@@ -20,6 +20,7 @@ public class QueryServiceTests
     public QueryServiceTests()
     {
         _vectorDbServiceMock = new Mock<IVectorDbService>();
+        _vectorDbServiceMock.Setup(x => x.Exists).Returns(true);
         _embeddingServiceMock = new Mock<ITextEmbeddingGenerationService>();
         
         _service = new QueryService(_vectorDbServiceMock.Object, _embeddingServiceMock.Object);

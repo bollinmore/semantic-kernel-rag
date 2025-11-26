@@ -74,7 +74,7 @@ public class AgentService
 
         if (string.IsNullOrWhiteSpace(context) || context == "[]")
         {
-            context = "No relevant documents found.";
+            return "I cannot answer this question because no relevant information was found in the knowledge base.";
         }
 
         // 2. Augment Prompt

@@ -31,6 +31,7 @@ public class DocumentProcessingServiceTests
 
         _embeddingServiceMock = new Mock<ITextEmbeddingGenerationService>();
         _vectorDbServiceMock = new Mock<IVectorDbService>();
+        _vectorDbServiceMock.Setup(x => x.Exists).Returns(true);
 
         _service = new DocumentProcessingService(config, _embeddingServiceMock.Object, _vectorDbServiceMock.Object);
     }
