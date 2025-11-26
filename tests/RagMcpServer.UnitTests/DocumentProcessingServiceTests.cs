@@ -8,9 +8,13 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using Microsoft.Extensions.Options;
+using Moq;
+using Microsoft.SemanticKernel.Embeddings;
 
 public class DocumentProcessingServiceTests
 {
+    private readonly Mock<ITextEmbeddingGenerationService> _embeddingServiceMock;
+    private readonly Mock<IVectorDbService> _vectorDbServiceMock;
     private readonly DocumentProcessingService _service;
 
     public DocumentProcessingServiceTests()
@@ -24,7 +28,21 @@ public class DocumentProcessingServiceTests
                 OverlapTokens = 20 
             } 
         });
-        _service = new DocumentProcessingService(config);
+
+        _embeddingServiceMock = new Mock<ITextEmbeddingGenerationService>();
+        _vectorDbServiceMock = new Mock<IVectorDbService>();
+
+        _service = new DocumentProcessingService(config, _embeddingServiceMock.Object, _vectorDbServiceMock.Object);
+    }
+
+    private async Task<List<T>> ToListAsync<T>(IAsyncEnumerable<T> source)
+    {
+        var list = new List<T>();
+        await foreach (var item in source)
+        {
+            list.Add(item);
+        }
+        return list;
     }
 
     [Fact]
@@ -35,7 +53,7 @@ public class DocumentProcessingServiceTests
         await File.WriteAllTextAsync(tempFile, "This is the first line.\nThis is the second line.");
         
         // Act
-        var chunks = await _service.GetDocumentChunksAsync(tempFile).ToListAsync();
+        var chunks = await ToListAsync(_service.GetDocumentChunksAsync(tempFile));
 
         // Assert
         Assert.NotEmpty(chunks);
@@ -59,7 +77,7 @@ public class DocumentProcessingServiceTests
         await File.WriteAllTextAsync(Path.Combine(tempDir, "test3.unsupported"), "This should be ignored.");
 
         // Act
-        var chunks = await _service.GetDocumentChunksAsync(tempDir).ToListAsync();
+        var chunks = await ToListAsync(_service.GetDocumentChunksAsync(tempDir));
 
         // Assert
         Assert.Equal(2, chunks.Count);
@@ -81,7 +99,7 @@ public class DocumentProcessingServiceTests
         await File.WriteAllTextAsync(tempFile, content);
 
         // Act
-        var chunks = await _service.GetDocumentChunksAsync(tempFile).ToListAsync();
+        var chunks = await ToListAsync(_service.GetDocumentChunksAsync(tempFile));
 
         // Assert
         Assert.True(chunks.Count > 1, "The content should have been split into multiple chunks.");
@@ -102,7 +120,7 @@ public class DocumentProcessingServiceTests
         Directory.CreateDirectory(tempDir);
 
         // Act
-        var chunks = await _service.GetDocumentChunksAsync(tempDir).ToListAsync();
+        var chunks = await ToListAsync(_service.GetDocumentChunksAsync(tempDir));
 
         // Assert
         Assert.Empty(chunks);
@@ -118,7 +136,7 @@ public class DocumentProcessingServiceTests
         var nonExistentPath = "/non/existent/path/that/does/not/exist";
 
         // Act
-        var chunks = await _service.GetDocumentChunksAsync(nonExistentPath).ToListAsync();
+        var chunks = await ToListAsync(_service.GetDocumentChunksAsync(nonExistentPath));
 
         // Assert
         Assert.Empty(chunks);
