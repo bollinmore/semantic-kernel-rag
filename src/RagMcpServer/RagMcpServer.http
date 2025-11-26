@@ -1,6 +1,0 @@
-@RagMcpServer_HostAddress = http://localhost:5228
-
-GET {{RagMcpServer_HostAddress}}/weatherforecast/
-Accept: application/json
-
-###

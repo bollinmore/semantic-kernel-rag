@@ -1,22 +1,54 @@
 #pragma warning disable SKEXP0050
-namespace RagMcpServer.Services;
-
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Options;
 using Microsoft.SemanticKernel.Text;
+using Microsoft.SemanticKernel.Embeddings;
 using RagMcpServer.Configuration;
+
+namespace RagMcpServer.Services;
 
 public class DocumentProcessingService
 {
     private readonly DocumentProcessingConfig _config;
+    private readonly ITextEmbeddingGenerationService _embeddingService;
+    private readonly IVectorDbService _vectorDbService;
 
-    public DocumentProcessingService(IOptions<AIConfig> config)
+    public DocumentProcessingService(
+        IOptions<AIConfig> config,
+        ITextEmbeddingGenerationService embeddingService,
+        IVectorDbService vectorDbService)
     {
         _config = config.Value.DocumentProcessing;
+        _embeddingService = embeddingService;
+        _vectorDbService = vectorDbService;
     }
 
+    public async Task ProcessAndSaveAsync(string text, string filePath)
+    {
+        // 1. Chunking
+        var lines = TextChunker.SplitPlainTextLines(text, _config.MaxTokensPerLine);
+        var chunks = TextChunker.SplitPlainTextParagraphs(lines, _config.MaxTokensPerParagraph, _config.OverlapTokens);
+        
+        if (chunks.Count == 0) return;
+
+        // 2. Embedding
+        var embeddings = await _embeddingService.GenerateEmbeddingsAsync(chunks);
+
+        // 3. Zip and Save
+        var records = new List<(string text, ReadOnlyMemory<float> embedding, string filePath)>();
+        for (int i = 0; i < chunks.Count; i++)
+        {
+            records.Add((chunks[i], embeddings[i], filePath));
+        }
+
+        await _vectorDbService.SaveChunksAsync(records);
+    }
+    
+    // Legacy methods kept if needed or can be removed if not used by anyone else
     public async IAsyncEnumerable<(string Content, string FilePath)> GetDocumentChunksAsync(string path)
     {
         if (File.Exists(path))
@@ -38,24 +70,6 @@ public class DocumentProcessingService
         }
     }
 
-    public async IAsyncEnumerable<(string Content, string FilePath)> GetDocumentChunksFromStreamAsync(Stream stream, string fileName)
-    {
-        // Currently only supporting text based formats for simplicity in this method
-        if (Path.GetExtension(fileName).Equals(".txt", StringComparison.OrdinalIgnoreCase) ||
-            Path.GetExtension(fileName).Equals(".md", StringComparison.OrdinalIgnoreCase))
-        {
-            using var reader = new StreamReader(stream, Encoding.UTF8);
-            var content = await reader.ReadToEndAsync();
-            var lines = TextChunker.SplitPlainTextLines(content, _config.MaxTokensPerLine);
-            var chunks = TextChunker.SplitPlainTextParagraphs(lines, _config.MaxTokensPerParagraph, _config.OverlapTokens);
-
-            foreach (var chunk in chunks)
-            {
-                yield return (chunk, fileName);
-            }
-        }
-    }
-
     private async IAsyncEnumerable<(string Content, string FilePath)> GetFileChunks(string filePath)
     {
         if (Path.GetExtension(filePath).Equals(".txt", StringComparison.OrdinalIgnoreCase) ||
@@ -70,6 +84,5 @@ public class DocumentProcessingService
                 yield return (chunk, filePath);
             }
         }
-        // PDF and other file types would be handled here
     }
 }

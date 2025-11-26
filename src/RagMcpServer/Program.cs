@@ -1,58 +1,66 @@
-using Microsoft.SemanticKernel.Embeddings;
-using Microsoft.SemanticKernel.ChatCompletion;
-using RagMcpServer.Middleware;
-using RagMcpServer.Services;
+using System;
+using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Configuration;
+using Serilog;
 using RagMcpServer.Configuration;
 using RagMcpServer.Extensions;
-using Serilog;
+using RagMcpServer.Services;
+// McpServer will be added in Phase 2
 
-var builder = WebApplication.CreateBuilder(args);
-
-builder.Host.UseSerilog((context, configuration) => 
-    configuration.ReadFrom.Configuration(context.Configuration));
-
-// Add Configuration
-builder.Services.Configure<AIConfig>(builder.Configuration.GetSection(AIConfig.SectionName));
-
-// Add services to the container.
-builder.Services.AddSingleton<IVectorDbService, SqliteDbService>();
-builder.Services.AddAIServices();
-builder.Services.AddSingleton<DocumentProcessingService>();
-builder.Services.AddSingleton<QueryService>();
-
-// Add Semantic Kernel
-builder.Services.AddKernel();
-
-
-builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
-
-var app = builder.Build();
-
-app.UseSerilogRequestLogging();
-
-app.UseMiddleware<GlobalExceptionHandlerMiddleware>();
-
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
+namespace RagMcpServer
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+    public class Program
+    {
+        public static async Task Main(string[] args)
+        {
+            // Configure Serilog to write to stderr to avoid interfering with stdout (JSON-RPC)
+            Log.Logger = new LoggerConfiguration()
+                .WriteTo.Console(standardErrorFromLevel: Serilog.Events.LogEventLevel.Verbose) 
+                .CreateLogger();
 
-app.UseHttpsRedirection();
+            try
+            {
+                var host = Host.CreateDefaultBuilder(args)
+                    .ConfigureAppConfiguration((context, config) =>
+                    {
+                        config.SetBasePath(AppContext.BaseDirectory);
+                        config.AddJsonFile("appsettings.json", optional: true, reloadOnChange: true);
+                        config.AddEnvironmentVariables();
+                    })
+                    .ConfigureServices((context, services) =>
+                    {
+                        // Add Configuration
+                        services.Configure<AIConfig>(context.Configuration.GetSection(AIConfig.SectionName));
 
-app.UseAuthorization();
+                        // Add services
+                        services.AddSingleton<IVectorDbService, SqliteDbService>();
+                        services.AddAIServices();
+                        services.AddSingleton<DocumentProcessingService>();
+                        services.AddSingleton<QueryService>();
+                        services.AddKernel();
 
-app.MapControllers();
+                        // Register McpServer
+                        services.AddSingleton<Mcp.McpServer>(); 
+                    })
+                    .UseSerilog()
+                    .Build();
 
-app.Run();
-
-public partial class Program { }
-
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
+                Log.Information("RagMcpServer starting...");
+                
+                // Run the MCP Server Loop
+                var mcpServer = host.Services.GetRequiredService<Mcp.McpServer>();
+                await mcpServer.RunAsync();
+            }
+            catch (Exception ex)
+            {
+                Log.Fatal(ex, "Application start-up failed");
+            }
+            finally
+            {
+                Log.CloseAndFlush();
+            }
+        }
+    }
 }

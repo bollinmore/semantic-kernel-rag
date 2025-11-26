@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 
 public interface IVectorDbService
 {
+    bool Exists { get; }
     Task SaveChunksAsync(IEnumerable<(string text, ReadOnlyMemory<float> embedding, string filePath)> chunks, CancellationToken cancellationToken = default);
     Task<IEnumerable<SearchResultItem>> SearchAsync(ReadOnlyMemory<float> queryEmbedding, int limit = 3, CancellationToken cancellationToken = default);
     Task<int> GetDocumentCountAsync(CancellationToken cancellationToken = default);
