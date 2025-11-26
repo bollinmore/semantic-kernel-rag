@@ -82,9 +82,9 @@ public class McpServer
         // NOTE: A robust implementation would handle Content-Length headers if strictly following full MCP/LSP spec,
         // but simple JSON-RPC often uses line-delimited JSON. We assume line-delimited for this iteration.
         
-        while (!reader.EndOfStream && !cancellationToken.IsCancellationRequested)
+        string? line;
+        while ((line = await reader.ReadLineAsync(cancellationToken)) != null && !cancellationToken.IsCancellationRequested)
         {
-            var line = await reader.ReadLineAsync(cancellationToken);
             if (string.IsNullOrWhiteSpace(line)) continue;
 
             try
