@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.Json;
+using System.Net.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
@@ -20,23 +21,31 @@ public class AgentService
         var aiSection = config.GetSection("AI:TextGeneration");
         var provider = aiSection["Provider"] ?? "Ollama";
         var modelId = aiSection["ModelId"] ?? "llama3.1";
-        var endpoint = aiSection["Endpoint"] ?? "http://localhost:11434";
+        var endpointUrl = aiSection["Endpoint"] ?? "http://localhost:11434";
+        var apiKey = aiSection["ApiKey"];
 
-        if (provider.Equals("Ollama", StringComparison.OrdinalIgnoreCase))
+        // If no key in config, try env var. If still null...
+        if (string.IsNullOrEmpty(apiKey))
         {
-            // Use OpenAI connector for Ollama
-            builder.AddOpenAIChatCompletion(
-                modelId: modelId,
-                apiKey: "ollama", // dummy key
-                endpoint: new Uri(endpoint));
+            apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY");
         }
-        else
+
+        // For Ollama/LiteLLM with no auth, we need a non-empty string often
+        if (string.IsNullOrEmpty(apiKey))
         {
-            // Fallback or OpenAI
-             builder.AddOpenAIChatCompletion(
-                modelId: modelId,
-                apiKey: Environment.GetEnvironmentVariable("OPENAI_API_KEY") ?? "missing-key");
+            apiKey = "dummy-key"; 
         }
+
+        Spectre.Console.AnsiConsole.MarkupLine($"[grey]Configured AI: Provider={provider}, Model={modelId}, Endpoint={endpointUrl}[/]");
+
+        var httpClient = new HttpClient { Timeout = TimeSpan.FromMinutes(10) };
+
+        // Use OpenAI connector for any compatible provider (Ollama, LiteLLM, vLLM, etc.)
+        builder.AddOpenAIChatCompletion(
+            modelId: modelId,
+            apiKey: apiKey, 
+            endpoint: new Uri(endpointUrl),
+            httpClient: httpClient);
 
         _kernel = builder.Build();
         _chat = _kernel.GetRequiredService<IChatCompletionService>();
