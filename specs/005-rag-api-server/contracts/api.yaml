@@ -1,0 +1,106 @@
+openapi: 3.0.3
+info:
+  title: RAG API Server
+  description: Semantic search API for retrieving document chunks from the vector database.
+  version: 1.0.0
+servers:
+  - url: http://localhost:5000
+    description: Local Development Server
+
+paths:
+  /api/rag/collections/{collection_name}/search:
+    post:
+      summary: Search for relevant document chunks
+      operationId: searchCollection
+      tags:
+        - Search
+      parameters:
+        - name: collection_name
+          in: path
+          description: The name of the document collection to search.
+          required: true
+          schema:
+            type: string
+            example: "default"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SearchRequest'
+      responses:
+        '200':
+          description: Successful search response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchResult'
+        '400':
+          description: Invalid input parameters (validation error)
+        '404':
+          description: Collection not found
+        '500':
+          description: Internal server error
+
+components:
+  schemas:
+    SearchRequest:
+      type: object
+      required:
+        - query
+      properties:
+        query:
+          type: string
+          description: The semantic query text.
+          maxLength: 4000
+        top_k:
+          type: integer
+          description: Number of top results to return.
+          default: 5
+          minimum: 1
+          maximum: 100
+        min_score:
+          type: number
+          format: float
+          description: Minimum similarity score filter (0.0 to 1.0).
+          default: 0.0
+          minimum: 0.0
+          maximum: 1.0
+      example:
+        query: "What is the project architecture?"
+        top_k: 3
+        min_score: 0.7
+
+    SearchResult:
+      type: object
+      properties:
+        count:
+          type: integer
+          description: Total number of results returned.
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/ResultItem'
+
+    ResultItem:
+      type: object
+      properties:
+        content:
+          type: string
+          description: The document chunk text.
+        score:
+          type: number
+          format: float
+          description: Similarity score (0.0 to 1.0).
+        metadata:
+          $ref: '#/components/schemas/Metadata'
+
+    Metadata:
+      type: object
+      properties:
+        page_number:
+          type: integer
+        chunk_index:
+          type: integer
+        source:
+          type: string
