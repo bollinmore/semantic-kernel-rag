@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Options;
 using Microsoft.SemanticKernel.Text;
 using Microsoft.SemanticKernel.Embeddings;
+using Microsoft.Extensions.Logging;
 using RagMcpServer.Configuration;
 
 namespace RagMcpServer.Services;
@@ -16,27 +17,36 @@ public class DocumentProcessingService
     private readonly DocumentProcessingConfig _config;
     private readonly ITextEmbeddingGenerationService _embeddingService;
     private readonly IVectorDbService _vectorDbService;
+    private readonly Microsoft.Extensions.Logging.ILogger<DocumentProcessingService> _logger;
 
     public DocumentProcessingService(
         IOptions<AIConfig> config,
         ITextEmbeddingGenerationService embeddingService,
-        IVectorDbService vectorDbService)
+        IVectorDbService vectorDbService,
+        Microsoft.Extensions.Logging.ILogger<DocumentProcessingService> logger)
     {
         _config = config.Value.DocumentProcessing;
         _embeddingService = embeddingService;
         _vectorDbService = vectorDbService;
+        _logger = logger;
     }
 
     public async Task ProcessAndSaveAsync(string text, string filePath)
     {
+        _logger.LogDebug("Processing file: {FilePath}", filePath);
+        
         // 1. Chunking
         var lines = TextChunker.SplitPlainTextLines(text, _config.MaxTokensPerLine);
         var chunks = TextChunker.SplitPlainTextParagraphs(lines, _config.MaxTokensPerParagraph, _config.OverlapTokens);
         
+        _logger.LogDebug("Generated {ChunkCount} chunks for {FilePath}", chunks.Count, filePath);
+
         if (chunks.Count == 0) return;
 
         // 2. Embedding
+        _logger.LogDebug("Generating embeddings for {ChunkCount} chunks...", chunks.Count);
         var embeddings = await _embeddingService.GenerateEmbeddingsAsync(chunks);
+        _logger.LogDebug("Generated {EmbeddingCount} embeddings.", embeddings.Count);
 
         // 3. Zip and Save
         var records = new List<(string text, ReadOnlyMemory<float> embedding, string filePath)>();
@@ -46,6 +56,7 @@ public class DocumentProcessingService
         }
 
         await _vectorDbService.SaveChunksAsync(records);
+        _logger.LogInformation("Successfully processed and saved {ChunkCount} chunks for {FilePath}", chunks.Count, filePath);
     }
     
     // Legacy methods kept if needed or can be removed if not used by anyone else

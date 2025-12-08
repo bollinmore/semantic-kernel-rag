@@ -2,6 +2,8 @@ using System.ComponentModel;
 using Spectre.Console;
 using Spectre.Console.Cli;
 using RagMcpClient.Mcp;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using System.IO;
 
 namespace RagMcpClient.Commands;
@@ -17,6 +19,21 @@ public class TestConnectionCommand : AsyncCommand<TestConnectionCommand.Settings
 
     public override async Task<int> ExecuteAsync(CommandContext context, Settings settings, CancellationToken cancellationToken)
     {
+        // Config setup
+        var builder = new ConfigurationBuilder()
+            .SetBasePath(AppContext.BaseDirectory)
+            .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true);
+        var config = builder.Build();
+
+        // Setup Logger
+        using var loggerFactory = LoggerFactory.Create(loggingBuilder =>
+        {
+            loggingBuilder
+                .AddConfiguration(config.GetSection("Logging"))
+                .AddConsole();
+        });
+        var mcpLogger = loggerFactory.CreateLogger<McpClient>();
+
         // Default logic to find server if not provided
         var serverPath = settings.ServerPath;
         if (string.IsNullOrEmpty(serverPath))
@@ -49,7 +66,7 @@ public class TestConnectionCommand : AsyncCommand<TestConnectionCommand.Settings
             }
         }
 
-        using var client = new McpClient();
+        using var client = new McpClient(mcpLogger);
         try
         {
             await AnsiConsole.Status().StartAsync("Connecting to Server...", async ctx => 

@@ -6,10 +6,12 @@ using System.Threading.Tasks;
 using Xunit;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Embeddings;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Linq;
+using Microsoft.Extensions.Logging.Abstractions;
 
 public class QueryServiceTests
 {
@@ -23,7 +25,7 @@ public class QueryServiceTests
         _vectorDbServiceMock.Setup(x => x.Exists).Returns(true);
         _embeddingServiceMock = new Mock<ITextEmbeddingGenerationService>();
         
-        _service = new QueryService(_vectorDbServiceMock.Object, _embeddingServiceMock.Object);
+        _service = new QueryService(_vectorDbServiceMock.Object, _embeddingServiceMock.Object, NullLogger<QueryService>.Instance);
     }
 
     [Fact]

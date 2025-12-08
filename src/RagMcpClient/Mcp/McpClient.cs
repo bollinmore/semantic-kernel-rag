@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using Spectre.Console;
 
 namespace RagMcpClient.Mcp;
@@ -14,9 +15,16 @@ public class McpClient : IDisposable
     private StreamReader? _stdout;
     private readonly JsonSerializerOptions _jsonOptions = new() { PropertyNameCaseInsensitive = true };
     private int _messageIdCounter = 0;
+    private readonly ILogger<McpClient>? _logger;
+
+    public McpClient(ILogger<McpClient>? logger = null)
+    {
+        _logger = logger;
+    }
 
     public async Task StartAsync(string serverPath)
     {
+        _logger?.LogDebug("Starting MCP Server at: {ServerPath}", serverPath);
         var startInfo = new ProcessStartInfo
         {
             FileName = serverPath,
@@ -34,7 +42,10 @@ public class McpClient : IDisposable
         _serverProcess.ErrorDataReceived += (sender, e) => 
         {
             if (!string.IsNullOrEmpty(e.Data))
+            {
                 AnsiConsole.MarkupLine($"[grey][[Server Log]] {Markup.Escape(e.Data)}[/]");
+                _logger?.LogDebug("[Server Log] {Log}", e.Data);
+            }
         };
 
         try
@@ -54,12 +65,14 @@ public class McpClient : IDisposable
         catch (Exception ex)
         {
             AnsiConsole.MarkupLine($"[red]Error starting server: {ex.Message}[/]");
+            _logger?.LogError(ex, "Error starting server");
             throw;
         }
     }
 
     private async Task InitializeAsync()
     {
+        _logger?.LogDebug("Sending Initialize request...");
         var request = new McpRequest
         {
             Id = GetNextId(),
@@ -72,6 +85,7 @@ public class McpClient : IDisposable
         {
             throw new Exception($"Initialization failed: {response.Error.Message}");
         }
+        _logger?.LogDebug("Initialization successful.");
         // Can check result here if needed
     }
 
@@ -83,6 +97,7 @@ public class McpClient : IDisposable
         }
 
         var json = JsonSerializer.Serialize(request, _jsonOptions);
+        _logger?.LogDebug("Sending Request: {Json}", json);
         await _stdin!.WriteLineAsync(json);
         await _stdin.FlushAsync();
 
@@ -92,6 +107,7 @@ public class McpClient : IDisposable
         var line = await _stdout!.ReadLineAsync();
         if (string.IsNullOrEmpty(line)) return null;
 
+        _logger?.LogDebug("Received Response: {Line}", line);
         return JsonSerializer.Deserialize<McpResponse>(line, _jsonOptions);
     }
 

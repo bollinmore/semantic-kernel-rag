@@ -10,16 +10,19 @@ using System.Collections.Generic;
 using Microsoft.Extensions.Options;
 using Moq;
 using Microsoft.SemanticKernel.Embeddings;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 public class DocumentProcessingServiceTests
 {
     private readonly Mock<ITextEmbeddingGenerationService> _embeddingServiceMock;
     private readonly Mock<IVectorDbService> _vectorDbServiceMock;
     private readonly DocumentProcessingService _service;
+    private readonly IOptions<AIConfig> _mockAiConfigOptions;
 
     public DocumentProcessingServiceTests()
     {
-        var config = Options.Create(new AIConfig 
+        _mockAiConfigOptions = Options.Create(new AIConfig 
         { 
             DocumentProcessing = new DocumentProcessingConfig 
             { 
@@ -33,7 +36,7 @@ public class DocumentProcessingServiceTests
         _vectorDbServiceMock = new Mock<IVectorDbService>();
         _vectorDbServiceMock.Setup(x => x.Exists).Returns(true);
 
-        _service = new DocumentProcessingService(config, _embeddingServiceMock.Object, _vectorDbServiceMock.Object);
+        _service = new DocumentProcessingService(_mockAiConfigOptions, _embeddingServiceMock.Object, _vectorDbServiceMock.Object, NullLogger<DocumentProcessingService>.Instance);
     }
 
     private async Task<List<T>> ToListAsync<T>(IAsyncEnumerable<T> source)
