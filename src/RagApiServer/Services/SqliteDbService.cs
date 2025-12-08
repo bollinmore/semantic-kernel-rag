@@ -39,16 +39,29 @@ public class SqliteDbService : IVectorDbService
                 if (!string.IsNullOrEmpty(path))
                 {
                     _absoluteDbPath = Path.GetFullPath(path);
-                    _logger.LogInformation("SqliteDbService initialized. Configured DB Path: {FullPath} (Exists: {Exists})", 
+                    
+                    // Update the builder with the absolute path and then update _connectionString
+                    builder["Data Source"] = _absoluteDbPath;
+                    _connectionString = builder.ConnectionString;
+
+                    _logger.LogInformation("SqliteDbService initialized. Resolved DB Path: {FullPath} (Exists: {Exists})", 
                         _absoluteDbPath, File.Exists(_absoluteDbPath));
                 }
+                else
+                {
+                    _logger.LogWarning("Connection string 'Data Source' value is empty. Using provided connection string as is: {ConnectionString}", _connectionString);
+                }
+            }
+            else
+            {
+                _logger.LogWarning("Connection string does not contain 'Data Source' key. Using provided connection string as is: {ConnectionString}", _connectionString);
             }
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to resolve absolute DB path.");
+            _logger.LogError(ex, "Failed to resolve absolute DB path from connection string: {ConnectionString}", _connectionString);
         }
-        _logger.LogInformation("Connection String used: {ConnectionString}", _connectionString);
+        _logger.LogInformation("Final Connection String used: {ConnectionString}", _connectionString);
         
         // Debug: Run raw SQL check
         CheckRawDatabaseAccess();
@@ -56,6 +69,12 @@ public class SqliteDbService : IVectorDbService
 
     private void CheckRawDatabaseAccess()
     {
+        if (!Exists)
+        {
+            _logger.LogWarning("[Raw Check] Database file does not exist at {Path}. Skipping raw check.", _absoluteDbPath);
+            return;
+        }
+
         try 
         {
             // Handle relative paths in connection string for raw connection
@@ -142,6 +161,12 @@ public class SqliteDbService : IVectorDbService
 
     public async Task<IEnumerable<SearchResultItem>> SearchAsync(ReadOnlyMemory<float> queryEmbedding, string collectionName, int limit = 3, CancellationToken cancellationToken = default)
     {
+        if (!Exists)
+        {
+            _logger.LogWarning("[SK] Database file not found at {Path}. Returning empty results.", _absoluteDbPath);
+            return Enumerable.Empty<SearchResultItem>();
+        }
+
         var store = await GetStoreAsync(cancellationToken);
         
         // Debug logs again
