@@ -126,7 +126,7 @@ public class McpServer
                         { 
                             protocolVersion = "2024-11-05", 
                             serverInfo = new { name = "RagMcpServer", version = "1.0.0" },
-                            capabilities = new { tools = new { } }
+                            capabilities = new { tools = _tools }
                         } 
                     };
                 
