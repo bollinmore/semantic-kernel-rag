@@ -145,6 +145,9 @@ public class InjectCommand : AsyncCommand<InjectCommand.Settings>
                             failedCount++;
                         }
 
+                        // Add a small cool-down delay between files to prevent overheating/overloading the local LLM
+                        await Task.Delay(200);
+
                         task.Increment(1);
                     }
                 });

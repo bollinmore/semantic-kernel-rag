@@ -128,6 +128,12 @@ public class SqliteDbService : IVectorDbService
 
     public async Task<IEnumerable<SearchResultItem>> SearchAsync(ReadOnlyMemory<float> queryEmbedding, int limit = 3, CancellationToken cancellationToken = default)
     {
+        if (!Exists)
+        {
+            _logger.LogWarning("Search attempted but vector database file does not exist. Returning empty results.");
+            return Enumerable.Empty<SearchResultItem>();
+        }
+
         var store = await GetStoreAsync(cancellationToken);
         
         try
@@ -171,6 +177,11 @@ public class SqliteDbService : IVectorDbService
 
     public async Task<int> GetDocumentCountAsync(CancellationToken cancellationToken = default)
     {
+        if (!Exists)
+        {
+            return 0;
+        }
+
         var store = await GetStoreAsync(cancellationToken);
         
         try 

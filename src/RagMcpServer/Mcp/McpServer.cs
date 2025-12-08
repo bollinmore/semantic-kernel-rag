@@ -118,13 +118,7 @@ public class McpServer
             switch (request.Method)
             {
                 case "initialize":
-                    if (!_vectorDbService.Exists)
-                    {
-                        var msg = "Vector database file not found. Please ensure the 'ConnectionStrings:Sqlite' path is correct and the file exists.";
-                        _logger.LogError(msg);
-                        return new McpResponse { Id = request.Id, Error = new McpError { Code = -32002, Message = msg } };
-                    }
-
+                    // Allow initialization even if DB doesn't exist yet, as 'Inject' will create it.
                     return new McpResponse 
                     { 
                         Id = request.Id, 

@@ -32,7 +32,7 @@ public class OllamaEmbeddingService : ITextEmbeddingGenerationService
             var content = new StringContent(JsonSerializer.Serialize(requestBody), Encoding.UTF8, "application/json");
             
             HttpResponseMessage? response = null;
-            int maxRetries = 5;
+            int maxRetries = 10;
             for (int i = 0; i < maxRetries; i++)
             {
                 try 
@@ -61,11 +61,18 @@ public class OllamaEmbeddingService : ITextEmbeddingGenerationService
             }
 
             // Throttle slightly to prevent overwhelming the runner
-            await Task.Delay(100, cancellationToken);
+            await Task.Delay(300, cancellationToken);
 
             if (response == null || !response.IsSuccessStatusCode)
             {
                 var body = response != null ? await response.Content.ReadAsStringAsync(cancellationToken) : "No response";
+                
+                if (body.Contains("EOF") || body.Contains("connection refused"))
+                {
+                     throw new InvalidOperationException(
+                        $"Ollama appears to have crashed or is unreachable (Error: {body}). This is often caused by insufficient RAM/VRAM or the model crashing on a specific input. Try restarting Ollama or reducing the chunk size.");
+                }
+
                 throw new InvalidOperationException(
                     $"Ollama embeddings API failed after {maxRetries} retries. Status: {response?.StatusCode}. Body: {body}");
             }

@@ -34,6 +34,13 @@ public class DocumentProcessingService
     public async Task ProcessAndSaveAsync(string text, string filePath)
     {
         _logger.LogDebug("Processing file: {FilePath}", filePath);
+
+        // Pre-check: Text file sanity check (avoid processing binary files or weird encodings mistakenly identified as text)
+        if (text.Contains('\0'))
+        {
+            _logger.LogWarning("Skipping file {FilePath} because it appears to be binary (contains null bytes).", filePath);
+            return;
+        }
         
         // 1. Chunking
         var lines = TextChunker.SplitPlainTextLines(text, _config.MaxTokensPerLine);
