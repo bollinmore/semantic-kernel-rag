@@ -24,7 +24,17 @@ public class SqliteDbService : IVectorDbService
     public SqliteDbService(IConfiguration configuration, ILogger<SqliteDbService> logger) 
     {
         _logger = logger; 
-        _connectionString = configuration.GetConnectionString("Sqlite") ?? "Data Source=rag.db";
+        
+        string? vectorDbPath = configuration["VectorDbPath"];
+        if (!string.IsNullOrEmpty(vectorDbPath))
+        {
+             _logger.LogInformation("Using vector DB path from command line: {Path}", vectorDbPath);
+             _connectionString = $"Data Source={vectorDbPath};Mode=ReadWriteCreate;Cache=Shared";
+        }
+        else
+        {
+            _connectionString = configuration.GetConnectionString("Sqlite") ?? "Data Source=rag.db";
+        }
         
         _logger.LogInformation("Environment.CurrentDirectory: {CWD}", Environment.CurrentDirectory);
         _logger.LogInformation("AppContext.BaseDirectory: {BaseDir}", AppContext.BaseDirectory);

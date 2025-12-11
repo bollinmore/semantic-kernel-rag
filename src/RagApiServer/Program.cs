@@ -28,6 +28,12 @@ namespace RagApiServer
             {
                 var builder = WebApplication.CreateBuilder(args);
 
+                // Add support for --db parameter
+                builder.Configuration.AddCommandLine(args, new Dictionary<string, string>
+                {
+                    { "--db", "VectorDbPath" }
+                });
+
                 builder.Host.UseSerilog();
 
                 // Add Configuration
