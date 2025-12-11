@@ -126,8 +126,8 @@ public class SqliteDbService : IVectorDbService
         {
             try
             {
-                _logger.LogDebug("Attempting to connect to SqliteMemoryStore...");
-                _memoryStore = await SqliteMemoryStore.ConnectAsync(_connectionString, cancellationToken);
+                _logger.LogDebug("Attempting to connect to SqliteMemoryStore with path: {DbPath}", _absoluteDbPath);
+                _memoryStore = await SqliteMemoryStore.ConnectAsync(_absoluteDbPath, cancellationToken);
                 _logger.LogDebug("Connected to SqliteMemoryStore.");
             }
             catch (Exception ex)
