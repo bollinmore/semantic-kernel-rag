@@ -3,6 +3,8 @@ using System.ComponentModel;
 using Spectre.Console;
 using Spectre.Console.Cli;
 using RagMcpClient.Mcp;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using System.IO;
 
 namespace RagMcpClient.Commands;
@@ -34,6 +36,21 @@ public class InjectCommand : AsyncCommand<InjectCommand.Settings>
             return 1;
         }
 
+        // Config setup
+        var builder = new ConfigurationBuilder()
+            .SetBasePath(AppContext.BaseDirectory)
+            .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true);
+        var config = builder.Build();
+
+        // Setup Logger
+        using var loggerFactory = LoggerFactory.Create(loggingBuilder =>
+        {
+            loggingBuilder
+                .AddConfiguration(config.GetSection("Logging"))
+                .AddConsole();
+        });
+        var mcpLogger = loggerFactory.CreateLogger<McpClient>();
+
         // Auto-detect server path if not provided (reusing logic from TestConnectionCommand, should ideally be shared)
         var serverPath = settings.ServerPath;
         if (string.IsNullOrEmpty(serverPath))
@@ -59,7 +76,7 @@ public class InjectCommand : AsyncCommand<InjectCommand.Settings>
             }
         }
 
-        var client = new McpClient();
+        var client = new McpClient(mcpLogger);
 
         try
         {
@@ -127,6 +144,9 @@ public class InjectCommand : AsyncCommand<InjectCommand.Settings>
                             AnsiConsole.MarkupLine($"[red]Error processing {fileName}: {ex.Message}[/]");
                             failedCount++;
                         }
+
+                        // Add a small cool-down delay between files to prevent overheating/overloading the local LLM
+                        await Task.Delay(200);
 
                         task.Increment(1);
                     }

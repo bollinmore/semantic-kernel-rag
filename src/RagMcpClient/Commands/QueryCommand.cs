@@ -5,6 +5,7 @@ using Spectre.Console.Cli;
 using RagMcpClient.Services;
 using RagMcpClient.Mcp;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using System.IO;
 
 namespace RagMcpClient.Commands;
@@ -36,6 +37,16 @@ public class QueryCommand : AsyncCommand<QueryCommand.Settings>
             .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true);
         var config = builder.Build();
 
+        // Setup Logger
+        using var loggerFactory = LoggerFactory.Create(loggingBuilder =>
+        {
+            loggingBuilder
+                .AddConfiguration(config.GetSection("Logging"))
+                .AddConsole();
+        });
+        var mcpLogger = loggerFactory.CreateLogger<McpClient>();
+        var agentLogger = loggerFactory.CreateLogger<AgentService>();
+
         // Server Path Logic
         var serverPath = settings.ServerPath;
         if (string.IsNullOrEmpty(serverPath))
@@ -57,8 +68,8 @@ public class QueryCommand : AsyncCommand<QueryCommand.Settings>
              return 1;
         }
 
-        var client = new McpClient();
-        var agent = new AgentService(config);
+        var client = new McpClient(mcpLogger);
+        var agent = new AgentService(config, agentLogger);
 
         try
         {

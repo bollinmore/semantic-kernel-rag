@@ -7,53 +7,37 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Options;
 using Microsoft.SemanticKernel.Text;
 using Microsoft.SemanticKernel.Embeddings;
-using Microsoft.Extensions.Logging;
-using RagMcpServer.Configuration;
+using RagApiServer.Configuration;
+using System.Threading;
 
-namespace RagMcpServer.Services;
+namespace RagApiServer.Services;
 
 public class DocumentProcessingService
 {
     private readonly DocumentProcessingConfig _config;
     private readonly ITextEmbeddingGenerationService _embeddingService;
     private readonly IVectorDbService _vectorDbService;
-    private readonly Microsoft.Extensions.Logging.ILogger<DocumentProcessingService> _logger;
 
     public DocumentProcessingService(
         IOptions<AIConfig> config,
         ITextEmbeddingGenerationService embeddingService,
-        IVectorDbService vectorDbService,
-        Microsoft.Extensions.Logging.ILogger<DocumentProcessingService> logger)
+        IVectorDbService vectorDbService)
     {
         _config = config.Value.DocumentProcessing;
         _embeddingService = embeddingService;
         _vectorDbService = vectorDbService;
-        _logger = logger;
     }
 
-    public async Task ProcessAndSaveAsync(string text, string filePath)
+    public async Task ProcessAndSaveAsync(string text, string filePath, string collectionName, CancellationToken cancellationToken = default)
     {
-        _logger.LogDebug("Processing file: {FilePath}", filePath);
-
-        // Pre-check: Text file sanity check (avoid processing binary files or weird encodings mistakenly identified as text)
-        if (text.Contains('\0'))
-        {
-            _logger.LogWarning("Skipping file {FilePath} because it appears to be binary (contains null bytes).", filePath);
-            return;
-        }
-        
         // 1. Chunking
         var lines = TextChunker.SplitPlainTextLines(text, _config.MaxTokensPerLine);
         var chunks = TextChunker.SplitPlainTextParagraphs(lines, _config.MaxTokensPerParagraph, _config.OverlapTokens);
         
-        _logger.LogDebug("Generated {ChunkCount} chunks for {FilePath}", chunks.Count, filePath);
-
         if (chunks.Count == 0) return;
 
         // 2. Embedding
-        _logger.LogDebug("Generating embeddings for {ChunkCount} chunks...", chunks.Count);
-        var embeddings = await _embeddingService.GenerateEmbeddingsAsync(chunks);
-        _logger.LogDebug("Generated {EmbeddingCount} embeddings.", embeddings.Count);
+        var embeddings = await _embeddingService.GenerateEmbeddingsAsync(chunks, cancellationToken: cancellationToken);
 
         // 3. Zip and Save
         var records = new List<(string text, ReadOnlyMemory<float> embedding, string filePath)>();
@@ -62,8 +46,7 @@ public class DocumentProcessingService
             records.Add((chunks[i], embeddings[i], filePath));
         }
 
-        await _vectorDbService.SaveChunksAsync(records);
-        _logger.LogInformation("Successfully processed and saved {ChunkCount} chunks for {FilePath}", chunks.Count, filePath);
+        await _vectorDbService.SaveChunksAsync(records, collectionName, cancellationToken);
     }
     
     // Legacy methods kept if needed or can be removed if not used by anyone else
