@@ -4,6 +4,8 @@ The `RagMcpServer.CLI` is a command-line interface tool for managing documents a
 
 The CLI acts as an **MCP Client**. It automatically spawns the `RagMcpServer` process locally and communicates with it via standard input/output (stdio). You do **not** need to start the server separately.
 
+> **Note**: For HTTP REST API access with Swagger UI, see the [API Server Quickstart](../specs/005-rag-api-server/quickstart.md).
+
 ## Prerequisites
 
 - .NET 8.0 SDK or later

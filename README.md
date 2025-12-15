@@ -10,8 +10,9 @@ This project implements a Retrieval-Augmented Generation (RAG) system using the 
 
 ## Architecture
 
-- **RagMcpServer**: The core server that implements the MCP protocol. It manages the Vector Database (SQLite) and handles document ingestion and retrieval. It runs as a local process.
+- **RagMcpServer**: The core server that implements the MCP protocol and provides an HTTP API. It manages the Vector Database (SQLite) and handles document ingestion and retrieval. It runs as a local process and supports both stdio (for MCP clients) and HTTP endpoints (for REST API clients).
 - **RagMcpClient**: A Command-Line Interface (CLI) tool that acts as an MCP Client. It spawns the Server process, manages the connection, and provides user-friendly commands for injecting documents and querying.
+- **RagApiServer**: The HTTP REST API server that provides endpoints for document search and management. It includes Swagger UI for interactive API testing.
 
 ## Quickstart
 
@@ -32,7 +33,20 @@ dotnet run -- help
 
 See [README-CLI.md](./README-CLI.md) for detailed CLI usage.
 
-### 3. Use with Cline
+### 3. Use the API Server
+
+The server also provides an HTTP REST API with Swagger UI:
+
+```bash
+cd src/RagApiServer
+dotnet run
+```
+
+Open your browser to `http://localhost:5000/swagger` for interactive API testing.
+
+See [API Server Quickstart](./specs/005-rag-api-server/quickstart.md) for detailed usage.
+
+### 4. Use with Cline
 
 You can configure Cline to use the `RagMcpServer` directly. See [README-MCP.md](./README-MCP.md) for instructions.
 
@@ -45,5 +59,6 @@ See [AI Configuration Guide](./specs/002-configure-llm-models/quickstart.md) for
 
 - `src/RagMcpServer/`: The MCP Server implementation (C#).
 - `src/RagMcpClient/`: The CLI Client implementation (C#).
+- `src/RagApiServer/`: The HTTP REST API Server implementation (C#).
 - `tests/`: Unit and integration tests.
 - `specs/`: Feature specifications and design documents.
